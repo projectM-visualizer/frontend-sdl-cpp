@@ -62,18 +62,6 @@ protected:
     void MouseUpEvent(const SDL_MouseButtonEvent& event);
 
     /**
-     * @brief Handles SDL game controller add events (plugin in a new controller) events.
-     * @param id The added controller id
-     */
-    void ControllerAdd( int id );
-
-    /**
-     * @brief Handles SDL game controller remove events.
-     * @param id The removed controller id
-     */
-    void ControllerRemove( int id );
-
-    /**
      * @brief Handles SDL game controller button down events.
      * @param event The controller button event
      */
@@ -114,6 +102,4 @@ protected:
     Poco::AutoPtr<Poco::Util::AbstractConfiguration> _userConfig; //!< View of the "projectM" configuration subkey in the "user" configuration.
 
     Poco::Logger& _logger{Poco::Logger::get("RenderLoop")}; //!< The class logger.
-
-    SDL_GameController *_controller;
 };
