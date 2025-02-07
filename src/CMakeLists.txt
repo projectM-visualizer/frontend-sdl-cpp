@@ -60,6 +60,7 @@ target_compile_definitions(projectMSDL
         PROJECTMSDL_VERSION="${PROJECT_VERSION}"
         )
 
+
 target_link_libraries(projectMSDL
         PRIVATE
         ProjectMSDL-GUI
@@ -70,7 +71,67 @@ target_link_libraries(projectMSDL
         SDL2::SDL2main
         )
 
-if(MSVC)
+# Add the dylib copying for macOS
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    function(copy_dylibs_to_frameworks TARGET_NAME DYLIB_SOURCE_DIR)
+        # Create Frameworks directory
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory 
+                "$<TARGET_FILE_DIR:${TARGET_NAME}>/../Frameworks"
+        )
+
+        # Find all .dylib files in the source directory
+        file(GLOB DYLIB_FILES "${DYLIB_SOURCE_DIR}/*.dylib")
+        
+        # Copy each .dylib file and fix its rpath
+        foreach(DYLIB_FILE ${DYLIB_FILES})
+            get_filename_component(DYLIB_NAME ${DYLIB_FILE} NAME)
+            add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                    "${DYLIB_FILE}"
+                    "$<TARGET_FILE_DIR:${TARGET_NAME}>/../Frameworks/${DYLIB_NAME}"
+            )
+        endforeach()
+
+        # Add rpath to the main executable
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND install_name_tool -add_rpath "@executable_path/../Frameworks"
+                "$<TARGET_FILE:${TARGET_NAME}>"
+        )
+    endfunction()
+
+    # Try to locate projectm
+    find_path(PROJECTM_LIBRARY_DIR
+        NAMES libprojectM-4.dylib  # Use a known file from the library directory
+        PATHS
+            $ENV{PROJECTM_ROOT}/lib         # Check an environment variable
+            /usr/local/lib/projectm         # Common install location
+            /opt/homebrew/lib/projectm      # Homebrew on Apple Silicon
+            /opt/local/lib/projectm         # MacPorts location
+        PATH_SUFFIXES
+            lib                             # Look automatically appended subdirectories like 'lib'
+        NO_DEFAULT_PATH
+    )
+
+    if (NOT PROJECTM_LIBRARY_DIR)
+        find_path(PROJECTM_LIBRARY_DIR
+            NAMES libprojectM.dylib
+            PATHS ${CMAKE_PREFIX_PATH}
+            PATH_SUFFIXES lib
+        )
+    endif()
+    
+    if (PROJECTM_LIBRARY_DIR)
+        message(STATUS "Found projectM libraries at: ${PROJECTM_LIBRARY_DIR}")
+        # Call the function to copy dylibs found in PROJECTM_LIBRARY_DIR
+        copy_dylibs_to_frameworks(projectMSDL "${PROJECTM_LIBRARY_DIR}")
+    else()
+        message(WARNING "Could not find projectM libraries. Please set PROJECTM_ROOT or specify the library location manually.")
+    endif()
+endif()
+
+
+if (MSVC)
     set_target_properties(projectMSDL
             PROPERTIES
             VS_DPI_AWARE "PerMonitor"
