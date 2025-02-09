@@ -106,6 +106,14 @@ void SettingsWindow::DrawProjectMSettingsTab()
             BooleanSetting("projectM.shuffleEnabled", true);
 
             ImGui::TableNextRow();
+            LabelWithTooltip("Skip To Dropped Presets", "If enabled, will skip to the new presets when preset(s) are dropped onto the window and added to the playlist");
+            BooleanSetting("projectM.skipToDropped", true);
+
+            ImGui::TableNextRow();
+            LabelWithTooltip("Dropped Folder Overrides Playlist", "When dropping a folder, clear the playlist and add all presets from the folder.");
+            BooleanSetting("projectM.droppedFolderOverride", false);
+
+            ImGui::TableNextRow();
             LabelWithTooltip("Preset Display Duration", "Time in seconds a preset will be displayed before it's switched.");
             DoubleSetting("projectM.displayDuration", 30.0, 1.0, 240.0);
 

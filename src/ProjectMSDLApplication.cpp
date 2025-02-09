@@ -76,7 +76,6 @@ void ProjectMSDLApplication::initialize(Poco::Util::Application& self)
                 {
                     loadConfiguration(configFilePath.toString(), PRIO_DEFAULT);
                 }
-
             }
         }
     }
@@ -202,6 +201,14 @@ void ProjectMSDLApplication::defineOptions(Poco::Util::OptionSet& options)
                              false, "<0/1>", true)
                           .binding("projectM.shuffleEnabled", _commandLineOverrides));
 
+    options.addOption(Option("skipToDropped", "", "Skip to drag & dropped presets",
+                             false, "<0/1>", true)
+                          .binding("projectM.skipToDropped", _commandLineOverrides));
+
+    options.addOption(Option("droppedFolderOverride", "", "When dropping a folder, clear the playlist and add all presets from the folder.",
+                             false, "<0/1>", true)
+                          .binding("projectM.droppedFolderOverride", _commandLineOverrides));
+
     options.addOption(Option("presetDuration", "", "Preset duration. Any number > 1, default 30.",
                              false, "<number>", true)
                           .binding("projectM.displayDuration", _commandLineOverrides));
@@ -273,4 +280,3 @@ void ProjectMSDLApplication::ListAudioDevices(POCO_UNUSED const std::string& nam
 {
     _commandLineOverrides->setBool("audio.listDevices", true);
 }
-
