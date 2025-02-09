@@ -12,9 +12,6 @@
 
 #include "ProjectMSDLApplication.h"
 
-#include <filesystem>
-namespace fs = std::filesystem;
-
 RenderLoop::RenderLoop()
     : _audioCapture(Poco::Util::Application::instance().getSubsystem<AudioCapture>())
     , _projectMWrapper(Poco::Util::Application::instance().getSubsystem<ProjectMWrapper>())
@@ -129,10 +126,11 @@ void RenderLoop::PollEvents()
                 int index = projectm_playlist_get_position(_playlistHandle) + 1;
 
                 do {
-                    if (!fs::is_directory(droppedFilePath)) {
+                    Poco::File droppedFile(droppedFilePath);
+                    if (!droppedFile.isDirectory()) {
                         // handle dropped preset file
                         Poco::Path droppedFileP(droppedFilePath);
-                        if (!fs::exists(droppedFilePath) || (droppedFileP.getExtension() != "milk" && droppedFileP.getExtension() != "prjm")) {
+                        if (!droppedFile.exists() || (droppedFileP.getExtension() != "milk" && droppedFileP.getExtension() != "prjm")) {
                             std::string toastMessage = std::string("Invalid preset file: ") + droppedFilePath;
                             Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
                             poco_information_f1(_logger, "%s", toastMessage);
