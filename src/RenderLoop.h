@@ -87,5 +87,7 @@ protected:
 
     ModifierKeyStates _keyStates; //!< Current "pressed" states of modifier keys
 
+    Poco::AutoPtr<Poco::Util::AbstractConfiguration> _userConfig; //!< View of the "projectM" configuration subkey in the "user" configuration.
+
     Poco::Logger& _logger{Poco::Logger::get("RenderLoop")}; //!< The class logger.
 };
