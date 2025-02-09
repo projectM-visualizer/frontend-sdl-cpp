@@ -10,6 +10,8 @@
 
 #include <SDL2/SDL.h>
 
+#include "ProjectMSDLApplication.h"
+
 RenderLoop::RenderLoop()
     : _audioCapture(Poco::Util::Application::instance().getSubsystem<AudioCapture>())
     , _projectMWrapper(Poco::Util::Application::instance().getSubsystem<ProjectMWrapper>())
@@ -102,6 +104,68 @@ void RenderLoop::PollEvents()
                 }
 
                 break;
+
+            case SDL_DROPFILE: {
+                char* droppedFilePath = event.drop.file;
+
+                bool shuffle = projectm_playlist_get_shuffle(_playlistHandle);
+                if (shuffle)
+                {
+                    projectm_playlist_set_shuffle(_playlistHandle, false);
+                }
+
+                int index = projectm_playlist_get_position(_playlistHandle) + 1;
+
+                do
+                {
+                    Poco::File droppedFile(droppedFilePath);
+                    if (!droppedFile.isDirectory())
+                    {
+                        // handle dropped preset file
+                        Poco::Path droppedFileP(droppedFilePath);
+                        if (!droppedFile.exists() || (droppedFileP.getExtension() != "milk" && droppedFileP.getExtension() != "prjm"))
+                        {
+                            std::string toastMessage = std::string("Invalid preset file: ") + droppedFilePath;
+                            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
+                            poco_information_f1(_logger, "%s", toastMessage);
+                            break; // exit the block and go to the shuffle check
+                        }
+
+                        if (projectm_playlist_insert_preset(_playlistHandle, droppedFilePath, index, true))
+                        {
+                            projectm_playlist_play_next(_playlistHandle, true);
+                            poco_information_f1(_logger, "Added preset: %s", std::string(droppedFilePath));
+                            // no need to toast single presets, as its obvious if a preset was loaded.
+                        }
+                    }
+                    else
+                    {
+                        uint32_t addedFilesCount = projectm_playlist_insert_path(_playlistHandle, droppedFilePath, index, true, true);
+                        if (addedFilesCount > 0)
+                        {
+                            std::string toastMessage = "Added " + std::to_string(addedFilesCount) + " presets from " + droppedFilePath;
+                            poco_information_f1(_logger, "%s", toastMessage);
+                            projectm_playlist_play_next(_playlistHandle, true);
+                            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
+                        }
+                        else
+                        {
+                            std::string toastMessage = std::string("No presets found in: ") + droppedFilePath;
+                            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
+                            poco_information_f1(_logger, "%s", toastMessage);
+                        }
+                    }
+                } while (false);
+
+                if (shuffle)
+                {
+                    projectm_playlist_set_shuffle(_playlistHandle, true);
+                }
+
+                SDL_free(droppedFilePath);
+                break;
+            }
+
 
             case SDL_QUIT:
                 _wantsToQuit = true;
