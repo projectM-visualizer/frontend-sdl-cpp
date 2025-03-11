@@ -132,6 +132,7 @@ private:
 
     bool _visible{false}; //!< Window visibility flag.
     bool _changed{false}; //!< true if the user changed any setting since the last save.
+    int _safeInt(const std::string& property, int defaultValue);
 
     Poco::AutoPtr<Poco::Util::PropertyFileConfiguration> _userConfiguration;
     Poco::AutoPtr<Poco::Util::MapConfiguration> _commandLineConfiguration;
