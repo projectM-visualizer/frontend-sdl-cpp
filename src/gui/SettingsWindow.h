@@ -4,6 +4,7 @@
 
 #include <Poco/Util/MapConfiguration.h>
 #include <Poco/Util/PropertyFileConfiguration.h>
+#include <Poco/Logger.h>
 
 #include <string>
 
@@ -15,7 +16,7 @@ class SettingsWindow
 public:
     SettingsWindow() = delete;
 
-    explicit SettingsWindow(ProjectMGUI& gui);
+    explicit SettingsWindow(ProjectMGUI& gui, Poco::Logger & logger);
 
     /**
      * @brief Displays the settings window.
@@ -134,6 +135,9 @@ private:
 
     Poco::AutoPtr<Poco::Util::PropertyFileConfiguration> _userConfiguration;
     Poco::AutoPtr<Poco::Util::MapConfiguration> _commandLineConfiguration;
+    std::set<std::string> _suppressPropertyWarnings;
+
+    Poco::Logger & _logger;
 
     FileChooser _pathChooser{FileChooser::Mode::Directory}; //!< The file chooser dialog to select preset and texture paths.
 };

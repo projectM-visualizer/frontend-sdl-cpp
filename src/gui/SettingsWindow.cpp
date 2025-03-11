@@ -13,12 +13,14 @@
 #include <Poco/NotificationCenter.h>
 
 #include <Poco/Util/Application.h>
+#include <Poco/Exception.h>
 
-SettingsWindow::SettingsWindow(ProjectMGUI& gui)
+SettingsWindow::SettingsWindow(ProjectMGUI& gui, Poco::Logger & logger)
     : _gui(gui)
     , _audioCapture(ProjectMSDLApplication::instance().getSubsystem<AudioCapture>())
     , _userConfiguration(ProjectMSDLApplication::instance().UserConfiguration())
     , _commandLineConfiguration(ProjectMSDLApplication::instance().CommandLineConfiguration())
+    , _logger(logger)
 {
 }
 
@@ -387,7 +389,17 @@ void SettingsWindow::IntegerSetting(const std::string& property, int defaultValu
 {
     ImGui::TableSetColumnIndex(1);
 
-    auto value = _userConfiguration->getInt(property, defaultValue);
+    int value = 0;
+
+    try {
+        value = _userConfiguration->getInt(property, defaultValue);
+        _suppressPropertyWarnings.erase(property);
+    } catch (Poco::SyntaxException & ex) {
+        if (_suppressPropertyWarnings.find(property) == _suppressPropertyWarnings.end()) {
+            _suppressPropertyWarnings.insert(property);
+            _logger.warning("Encountered a non-integral property for '" + property + "', defaulting to zero and it will be clobbered if settings are saved.");
+        }
+    }
 
     if (ImGui::SliderInt(std::string("##integer_" + property).c_str(), &value, min, max))
     {
