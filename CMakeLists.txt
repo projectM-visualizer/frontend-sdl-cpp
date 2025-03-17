@@ -75,6 +75,11 @@ find_package(projectM4 REQUIRED COMPONENTS Playlist)
 find_package(SDL2 REQUIRED)
 find_package(Poco REQUIRED COMPONENTS JSON XML Util Foundation)
 
+if(Poco_VERSION VERSION_GREATER_EQUAL 1.14.0)
+    # POCO 1.14 requires at least C++17
+    set(CMAKE_CXX_STANDARD 17)
+endif()
+
 if(ENABLE_FREETYPE)
     find_package(Freetype)
 endif()
