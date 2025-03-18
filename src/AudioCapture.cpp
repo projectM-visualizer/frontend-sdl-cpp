@@ -121,7 +121,7 @@ int AudioCapture::GetInitialAudioDeviceIndex(const AudioDeviceMap& deviceList)
     // Check if configured device is a number or string
     try
     {
-        audioDeviceIndex = _config->getInt("device", -1);
+        audioDeviceIndex = _config->getInt("audio.device", -1);
         if (deviceList.find(audioDeviceIndex) == deviceList.end())
         {
             poco_debug(_logger,
@@ -131,7 +131,7 @@ int AudioCapture::GetInitialAudioDeviceIndex(const AudioDeviceMap& deviceList)
     }
     catch (Poco::SyntaxException& ex)
     {
-        auto audioDeviceName = _config->getString("device", "");
+        auto audioDeviceName = _config->getString("audio.device", "");
 
         poco_debug_f1(_logger, R"(audio.device is set to non-numerical value. Searching for device name "%s".)",
                       audioDeviceName);
