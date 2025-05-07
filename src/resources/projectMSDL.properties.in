@@ -48,6 +48,10 @@ window.adaptiveVerticalSync = true
 # If false, the window title is fixed to "projectM".
 window.displayPresetNameInTitle = true
 
+# User-defined scaling factor for UI/font size. Values will be clamped to a range from 0.1 up to 3.0 (10% and 300%, respectively).
+# Useful if the automatically determined UI size is either to small or too large.
+window.uiScale = 1.0
+
 ### projectM settings
 
 # Default path where projectMSDL will search for presets and textures. The directory will be searched recursively.

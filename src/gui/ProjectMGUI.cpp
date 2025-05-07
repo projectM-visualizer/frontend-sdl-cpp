@@ -130,6 +130,11 @@ void ProjectMGUI::Draw()
         return;
     }
 
+    if (_userScalingFactor != GetClampedUserScalingFactor())
+    {
+        UpdateFontSize();
+    }
+
     ImGui_ImplSDL2_NewFrame();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
@@ -218,9 +223,16 @@ float ProjectMGUI::GetScalingFactor()
     SDL_GetWindowSize(_renderingWindow, &windowWidth, &windowHeight);
     SDL_GL_GetDrawableSize(_renderingWindow, &renderWidth, &renderHeight);
 
+    _userScalingFactor = GetClampedUserScalingFactor();
+
     // If the OS has a scaled UI, this will return the inverse factor. E.g. if the display is scaled to 200%,
     // the renderWidth (in actual pixels) will be twice as much as the "virtual" unscaled window width.
-    return ((static_cast<float>(windowWidth) / static_cast<float>(renderWidth)) + (static_cast<float>(windowHeight) / static_cast<float>(renderHeight))) * 0.5f;
+    return ((static_cast<float>(windowWidth) / static_cast<float>(renderWidth)) + (static_cast<float>(windowHeight) / static_cast<float>(renderHeight))) * 0.5f * _userScalingFactor;
+}
+
+float ProjectMGUI::GetClampedUserScalingFactor()
+{
+    return std::min(3.0f, std::max(0.1f, static_cast<float>(Poco::Util::Application::instance().config().getDouble("window.uiScale", 1.0))));
 }
 
 void ProjectMGUI::DisplayToastNotificationHandler(const Poco::AutoPtr<DisplayToastNotification>& notification)

@@ -105,6 +105,18 @@ private:
     void DoubleSetting(const std::string& property, double defaultValue, double min, double max);
 
     /**
+     * @brief Displays a slider to select a double min/max value and an "Apply" button to set the value.
+     * Useful if the slider affects UI rendering (e.g. scaling).
+     * @param property The property name in the config.
+     * @param defaultValue Default value for the property if not set.
+     * @param min Minimum slider value.
+     * @param max Maximum slider value.
+     * @param tempValue The storage location for the displayed slider value.
+     */
+    void DoubleSettingWithApply(const std::string& property, double defaultValue, double min, double max,
+                                float& tempValue);
+
+    /**
      * @brief Displays a checkbox to override the window startup position, and if this is selected, displays two sliders.
      */
     void WindowPositionSetting();
@@ -118,8 +130,9 @@ private:
      * @brief Displays a reset button and removes the property from the UI map if clicked.
      * @param property1 First property to reset.
      * @param property2 Optional second property to reset.
+     * @return true if the button was pressed, false otherwise.
      */
-    void ResetButton(const std::string& property1, const std::string& property2 = "");
+    bool ResetButton(const std::string& property1, const std::string& property2 = "");
 
     /**
      * @brief Displays a red note and a tooltip when hovered explaining the setting can't be changed now.
@@ -136,4 +149,6 @@ private:
     Poco::AutoPtr<Poco::Util::MapConfiguration> _commandLineConfiguration;
 
     FileChooser _pathChooser{FileChooser::Mode::Directory}; //!< The file chooser dialog to select preset and texture paths.
+
+    float _userScale{1.0f}; //!< Temporary value for UI scale
 };

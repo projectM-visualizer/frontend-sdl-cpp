@@ -3,8 +3,8 @@
 #include "AboutWindow.h"
 #include "HelpWindow.h"
 #include "MainMenu.h"
-#include "ToastMessage.h"
 #include "SettingsWindow.h"
+#include "ToastMessage.h"
 
 #include "notifications/DisplayToastNotification.h"
 
@@ -107,6 +107,8 @@ public:
 private:
     float GetScalingFactor();
 
+    static float GetClampedUserScalingFactor();
+
     void DisplayToastNotificationHandler(const Poco::AutoPtr<DisplayToastNotification>& notification);
 
     ProjectMWrapper* _projectMWrapper{nullptr};
@@ -122,6 +124,7 @@ private:
 
     uint64_t _lastFrameTicks{0}; //!< Tick count of the last frame (see SDL_GetTicks64)
 
+    float _userScalingFactor{1.0f}; //!< The user-defined UI scaling factor.
     float _textScalingFactor{0.0f}; //!< The text scaling factor.
 
     MainMenu _mainMenu{*this};
