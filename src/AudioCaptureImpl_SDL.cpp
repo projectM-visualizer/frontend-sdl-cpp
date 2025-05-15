@@ -55,6 +55,8 @@ void AudioCaptureImpl::StartRecording(projectm* projectMHandle, int audioDeviceI
     _projectMHandle = projectMHandle;
     _currentAudioDeviceIndex = audioDeviceIndex;
 
+    poco_debug_f1(_logger, "Using SDL audio driver \"%s\".", std::string(SDL_GetCurrentAudioDriver()));
+
     if (OpenAudioDevice())
     {
         SDL_PauseAudioDevice(_currentAudioDeviceID, false);
@@ -125,7 +127,7 @@ bool AudioCaptureImpl::OpenAudioDevice()
 
     // Will be NULL on error, which happens if the requested index is -1. This automatically selects the default device.
     auto deviceName = SDL_GetAudioDeviceName(_currentAudioDeviceIndex, true);
-    _currentAudioDeviceID = SDL_OpenAudioDevice(deviceName, true, &requestedSpecs, &actualSpecs, 0);
+    _currentAudioDeviceID = SDL_OpenAudioDevice(deviceName, true, &requestedSpecs, &actualSpecs, SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
 
     if (_currentAudioDeviceID == 0)
     {
