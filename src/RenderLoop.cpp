@@ -421,11 +421,6 @@ void RenderLoop::MouseDownEvent(const SDL_MouseButtonEvent& event)
         case SDL_BUTTON_RIGHT:
             _sdlRenderingWindow.ToggleFullscreen();
             break;
-
-        case SDL_BUTTON_MIDDLE:
-            projectm_touch_destroy_all(_projectMHandle);
-            poco_debug(_logger, "Cleared all custom waveforms.");
-            break;
     }
 }
 

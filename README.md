@@ -12,8 +12,6 @@ present.
 
 | Command | Keyboard | Mouse | Game Controller |
 | --- | --- | --- | --- |
-| Add a new waveform | | `ctrl` + Left |  |
-| Clear all custom waveforms | | Middle |  |
 | Toggle full screen | `ctrl` + `f` | Right | A |
 | Show/hide GUI | `esc` |  | Start |
 | Random preset | `r` |  | B |
