@@ -142,11 +142,6 @@ logging.channels.async.channel = split
 # Default logging settings.
 logging.loggers.root.channel = async
 
-# Set log level to debug for all components
-#logging.loggers.root.level = debug
-logging.loggers.root.level = information
-
-
 # You can configure log levels, channels etc. for each message source (logger) individually.
 # See https://docs.pocoproject.org/current/Poco.Util.LoggingConfigurator.html for details.
 # Example:
