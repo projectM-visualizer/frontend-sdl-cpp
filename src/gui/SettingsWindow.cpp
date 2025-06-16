@@ -13,12 +13,14 @@
 #include <Poco/NotificationCenter.h>
 
 #include <Poco/Util/Application.h>
+#include <Poco/Exception.h>
 
-SettingsWindow::SettingsWindow(ProjectMGUI& gui)
+SettingsWindow::SettingsWindow(ProjectMGUI& gui, Poco::Logger & logger)
     : _gui(gui)
     , _audioCapture(ProjectMSDLApplication::instance().getSubsystem<AudioCapture>())
     , _userConfiguration(ProjectMSDLApplication::instance().UserConfiguration())
     , _commandLineConfiguration(ProjectMSDLApplication::instance().CommandLineConfiguration())
+    , _logger(logger)
 {
 }
 
@@ -423,7 +425,7 @@ void SettingsWindow::IntegerSetting(const std::string& property, int defaultValu
 {
     ImGui::TableSetColumnIndex(1);
 
-    auto value = _userConfiguration->getInt(property, defaultValue);
+    auto value = _safeInt(property, defaultValue);
 
     if (ImGui::SliderInt(std::string("##integer_" + property).c_str(), &value, min, max))
     {
@@ -445,8 +447,9 @@ void SettingsWindow::IntegerSettingVec(const std::string& property1, const std::
     ImGui::TableSetColumnIndex(1);
 
     int values[2] = {
-        _userConfiguration->getInt(property1, defaultValue1),
-        _userConfiguration->getInt(property2, defaultValue2)};
+        _safeInt(property1, defaultValue1),
+        _safeInt(property2, defaultValue2)
+    };
 
     if (ImGui::SliderInt2(std::string("##integer_" + property1 + property2).c_str(), values, min, max))
     {
@@ -633,3 +636,20 @@ void SettingsWindow::OverriddenSettingMarker()
         ImGui::EndTooltip();
     }
 }
+
+int SettingsWindow::_safeInt(const std::string& property, int defaultValue) {
+    int value = defaultValue;
+
+    try {
+        value = _userConfiguration->getInt(property, defaultValue);
+    } catch (Poco::SyntaxException & ex) {
+        if (_suppressPropertyWarnings.find(property) == _suppressPropertyWarnings.end()) {
+            _suppressPropertyWarnings.insert(property);
+            _logger.warning(
+                "Encountered a non-integral property for '" + property + "', defaulting to zero and it will be clobbered if settings are saved."
+            );
+        }
+    }
+    return value;
+}
+

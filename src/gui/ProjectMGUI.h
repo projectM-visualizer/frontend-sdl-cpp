@@ -127,14 +127,14 @@ private:
     float _userScalingFactor{1.0f}; //!< The user-defined UI scaling factor.
     float _textScalingFactor{0.0f}; //!< The text scaling factor.
 
+    Poco::Logger& _logger{Poco::Logger::get("ProjectMGUI")}; //!< The class logger.
+
     MainMenu _mainMenu{*this};
-    SettingsWindow _settingsWindow{*this}; //!< The settings window.
+    SettingsWindow _settingsWindow{*this, _logger}; //!< The settings window.
     AboutWindow _aboutWindow{*this}; //!< The about window.
     HelpWindow _helpWindow; //!< Help window with shortcuts and tips.
 
     std::unique_ptr<ToastMessage> _toast; //!< Current toast to be displayed.
 
     bool _visible{false}; //!< Flag for settings window visibility.
-
-    Poco::Logger& _logger{Poco::Logger::get("ProjectMGUI")}; //!< The class logger.
 };
