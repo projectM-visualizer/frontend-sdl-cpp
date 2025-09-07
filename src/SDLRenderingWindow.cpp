@@ -384,11 +384,17 @@ SDL_GLContext SDLRenderingWindow::GetGlContext() const
 
 void SDLRenderingWindow::UpdateWindowTitleNotificationHandler(POCO_UNUSED const Poco::AutoPtr<UpdateWindowTitleNotification>& notification)
 {
-    UpdateWindowTitle();
+    UpdateWindowTitle(notification->_customTitle);
 }
 
-void SDLRenderingWindow::UpdateWindowTitle()
+void SDLRenderingWindow::UpdateWindowTitle(const std::string& customTitle)
 {
+    if (!customTitle.empty())
+    {
+        SDL_SetWindowTitle(_renderingWindow, customTitle.c_str());
+        return;
+    }
+
     std::string newTitle = "projectM";
 
     if (_config->getBool("displayPresetNameInTitle", true))
