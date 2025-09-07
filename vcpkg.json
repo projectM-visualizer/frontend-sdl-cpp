@@ -9,7 +9,8 @@
         "util"
       ]
     },
+    "freetype",
     "projectm",
-    "freetype"
+    "projectm-eval"
   ]
 }

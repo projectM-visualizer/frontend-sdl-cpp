@@ -3,6 +3,7 @@
 #include "AboutWindow.h"
 #include "HelpWindow.h"
 #include "MainMenu.h"
+#include "PresetEditorGUI.h"
 #include "SettingsWindow.h"
 #include "ToastMessage.h"
 
@@ -90,6 +91,12 @@ public:
     void PopFont();
 
     /**
+     * @brief Opens the preset editor UI.
+     * @param presetFileName The file name of the preset to edit, or empty to use the currently loaded preset.
+     */
+    void ShowPresetEditor(const std::string& presetFileName);
+
+    /**
      * @brief Displays the settings window.
      */
     void ShowSettingsWindow();
@@ -128,6 +135,7 @@ private:
     float _textScalingFactor{0.0f}; //!< The text scaling factor.
 
     MainMenu _mainMenu{*this};
+    Editor::PresetEditorGUI _presetEditorGUI{*this}; //!< The preset editor GUI.
     SettingsWindow _settingsWindow{*this}; //!< The settings window.
     AboutWindow _aboutWindow{*this}; //!< The about window.
     HelpWindow _helpWindow; //!< Help window with shortcuts and tips.

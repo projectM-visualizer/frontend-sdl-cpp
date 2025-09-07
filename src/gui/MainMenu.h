@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "FileChooser.h"
 
 class ProjectMGUI;
 class ProjectMWrapper;
@@ -23,8 +23,15 @@ public:
     void Draw();
 
 private:
+    void DrawFileMenu();
+    void DrawPlaybackMenu();
+    void DrawOptionsMenu();
+    void DrawHelpMenu();
+
     Poco::NotificationCenter& _notificationCenter; //!< Notification center instance.
     ProjectMGUI& _gui; //!< Reference to the GUI subsystem.
     ProjectMWrapper& _projectMWrapper; //!< Reference to the projectM wrapper subsystem.
     AudioCapture& _audioCapture; //!< Reference to the audio capture subsystem.
+
+    FileChooser _presetChooser{FileChooser::Mode::File}; //!< The file chooser dialog to select presets for editing.
 };

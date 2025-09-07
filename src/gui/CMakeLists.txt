@@ -54,9 +54,11 @@ target_include_directories(ProjectMSDL-GUI
 
 target_link_libraries(ProjectMSDL-GUI
         PUBLIC
+        PresetEditor
         Poco::Util
         ImGui
         libprojectM::projectM
         "$<$<PLATFORM_ID:Darwin>:-framework ApplicationServices>"
         )
 
+add_subdirectory(preset_editor)
