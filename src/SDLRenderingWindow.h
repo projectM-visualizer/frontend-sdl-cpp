@@ -122,7 +122,7 @@ protected:
     /**
      * @brief Updates the window title.
      */
-    void UpdateWindowTitle();
+    void UpdateWindowTitle(const std::string& customTitle = "");
 
     /**
      * @brief Updates the swap interval from the user settings.
