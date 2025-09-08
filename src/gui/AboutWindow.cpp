@@ -59,6 +59,7 @@ void AboutWindow::Draw()
             ImGui::BulletText("Dear ImGui by Omar Cornut and contributors (MIT)");
             ImGui::BulletText("The POCO C++ Framework by Applied Informatics GmbH (MIT)");
             ImGui::BulletText("FreeType 2 (FreeType License / GNU GPL v2)");
+            ImGui::BulletText("FontAwesome Free Icons v7 (FontAwesome License / SIL OFL 1.1)");
 
             ImGui::Dummy({.0f, 10.0f});
             ImGui::TextUnformatted("Via libprojectM:");

@@ -86,6 +86,16 @@ public:
     void PushUIFont();
 
     /**
+     * @brief Pushes the "Solid" icon font to the render stack
+     */
+    void PushSolidIconsFont();
+
+    /**
+     * @brief Pushes the "Regular" icon font to the render stack
+     */
+    void PushRegularIconsFont();
+
+    /**
      * @brief Pops the last font from the stack
      */
     void PopFont();
@@ -128,6 +138,8 @@ private:
     SDL_GLContext _glContext{nullptr}; //!< Pointer to the OpenGL context associated with the window.
     ImFont* _uiFont{nullptr}; //!< Main UI font (monospaced).
     ImFont* _toastFont{nullptr}; //!< Toast message font (sans-serif, larger).
+    ImFont* _fontAwesomeIconsSolid{nullptr}; //!< "Solid" icons set by FontAwesome.
+    ImFont* _fontAwesomeIconsRegular{nullptr}; //!< "Regular" icons set by FontAwesome.
 
     uint64_t _lastFrameTicks{0}; //!< Tick count of the last frame (see SDL_GetTicks64)
 

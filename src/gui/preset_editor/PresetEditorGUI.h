@@ -4,6 +4,7 @@
 #include "PresetFile.h"
 #include "TextEditor.h"
 #include "EditorMenu.h"
+#include "ExpressionCodeTypes.h"
 
 #include <string>
 
@@ -47,6 +48,10 @@ private:
     void TakeProjectMControl();
     void ReleaseProjectMControl();
 
+    void EditCode(ExpressionCodeTypes type, std::string& code, int index = 0);
+
+    unsigned long GetLoC(const std::string& code);
+
     void DrawLeftSideBar();
 
     void DrawPresetCompatibilitySettings();
@@ -54,12 +59,16 @@ private:
     void DrawDefaultWaveformSettings();
     void DrawWaveformModeSelection();
     void DrawMotionVectorSettings();
+    void DrawMotionCodeSettings();
+    void DrawWarpMotionSettings();
     void DrawBorderSettings();
+    void DrawCustomWaveSettings(EditorPreset::Wave& waveform);
+    void DrawCustomShapeSettings(EditorPreset::Shape& shape);
+    void DrawShaderCodeSettings();
     void DrawShaderLossWarning() const;
 
     static void DrawHelpTooltip(const std::string& helpText);
 
-    void EditCode(const std::string& code, bool isShaderCode);
 
     ProjectMGUI& _gui; //!< Reference to the projectM GUI instance
     ProjectMSDLApplication& _application;

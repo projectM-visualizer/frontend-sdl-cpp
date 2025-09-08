@@ -1,6 +1,7 @@
 #include "gui/MainMenu.h"
 
 #include "AudioCapture.h"
+#include "IconsFontAwesome7.h"
 #include "ProjectMSDLApplication.h"
 #include "ProjectMWrapper.h"
 
@@ -53,9 +54,9 @@ void MainMenu::DrawFileMenu()
 {
     if (ImGui::BeginMenu("File"))
     {
-        if (ImGui::BeginMenu("Preset Editor"))
+        if (ImGui::BeginMenu(ICON_FA_PENCIL " Preset Editor"))
         {
-            if (ImGui::MenuItem("Edit Current Preset", "Ctrl+e"))
+            if (ImGui::MenuItem(ICON_FA_PENCIL " Edit Current Preset", "Ctrl+e"))
             {
                 auto currentPreset = _projectMWrapper.CurrentPresetFileName();
                 if (currentPreset.empty())
@@ -67,12 +68,12 @@ void MainMenu::DrawFileMenu()
                     _gui.ShowPresetEditor(currentPreset);
                 }
             }
-            if (ImGui::MenuItem("Select Preset From Disk...", "Ctrl+l"))
+            if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Select Preset From Disk...", "Ctrl+l"))
             {
                 _presetChooser.Title("Select a Preset for Editing");
                 _presetChooser.Show();
             }
-            if (ImGui::MenuItem("Create New Preset", "Ctrl+Shift+n"))
+            if (ImGui::MenuItem(ICON_FA_SQUARE_PLUS " Create New Preset", "Ctrl+Shift+n"))
             {
                 _gui.ShowPresetEditor({});
             }
@@ -82,14 +83,14 @@ void MainMenu::DrawFileMenu()
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem("Settings...", "Ctrl+s"))
+        if (ImGui::MenuItem(ICON_FA_GEAR " Settings...", "Ctrl+s"))
         {
             _gui.ShowSettingsWindow();
         }
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem("Quit projectM", "Ctrl+q"))
+        if (ImGui::MenuItem(ICON_FA_DOOR_OPEN " Quit projectM", "Ctrl+q"))
         {
             _notificationCenter.postNotification(new QuitNotification);
         }
@@ -104,30 +105,30 @@ void MainMenu::DrawPlaybackMenu()
     {
         auto& app = ProjectMSDLApplication::instance();
 
-        if (ImGui::MenuItem("Play Next Preset", "n"))
+        if (ImGui::MenuItem(ICON_FA_FORWARD_STEP " Play Next Preset", "n"))
         {
             _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::LastPreset));
         }
-        if (ImGui::MenuItem("Play Previous Preset", "p"))
+        if (ImGui::MenuItem(ICON_FA_BACKWARD_STEP " Play Previous Preset", "p"))
         {
             _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::PreviousPreset));
         }
-        if (ImGui::MenuItem("Go Back One Preset", "Backspace"))
+        if (ImGui::MenuItem(ICON_FA_ROTATE_LEFT " Go Back One Preset", "Backspace"))
         {
             _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::LastPreset));
         }
-        if (ImGui::MenuItem("Random Preset", "r"))
+        if (ImGui::MenuItem(ICON_FA_WAND_MAGIC_SPARKLES " Random Preset", "r"))
         {
             _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::RandomPreset));
         }
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem("Lock Preset", "Spacebar", app.config().getBool("projectM.presetLocked", false)))
+        if (ImGui::MenuItem(ICON_FA_LOCK " Lock Preset", "Spacebar", app.config().getBool("projectM.presetLocked", false)))
         {
             _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::TogglePresetLocked));
         }
-        if (ImGui::MenuItem("Enable Shuffle", "y", app.config().getBool("projectM.shuffleEnabled", true)))
+        if (ImGui::MenuItem(ICON_FA_SHUFFLE " Enable Shuffle", "y", app.config().getBool("projectM.shuffleEnabled", true)))
         {
             _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::ToggleShuffle));
         }
@@ -207,18 +208,19 @@ void MainMenu::DrawHelpMenu()
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem("Visit the projectM Wiki on GitHub"))
+        if (ImGui::MenuItem(ICON_FA_ARROW_UP_RIGHT_FROM_SQUARE " Visit the projectM Wiki on GitHub"))
         {
             SystemBrowser::OpenURL("https://github.com/projectM-visualizer/projectm/wiki");
         }
-        if (ImGui::MenuItem("Report a Bug or Request a Feature"))
+        if (ImGui::MenuItem(ICON_FA_ARROW_UP_RIGHT_FROM_SQUARE " Report a Bug or Request a Feature"))
         {
             SystemBrowser::OpenURL("https://github.com/projectM-visualizer/projectm/issues/new/choose");
         }
-        if (ImGui::MenuItem("Sponsor projectM on OpenCollective"))
+        if (ImGui::MenuItem(ICON_FA_ARROW_UP_RIGHT_FROM_SQUARE " Sponsor projectM on OpenCollective"))
         {
             SystemBrowser::OpenURL("https://opencollective.com/projectm");
         }
+
         ImGui::EndMenu();
     }
 }
