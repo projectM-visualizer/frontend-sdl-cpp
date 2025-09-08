@@ -1,14 +1,21 @@
 add_subdirectory(imgui_color_text_editor)
 
 add_library(PresetEditor STATIC
+        CodeContextInformation.cpp
+        CodeContextInformation.h
+        CodeEditorTab.cpp
+        CodeEditorTab.h
+        CodeEditorWindow.cpp
+        CodeEditorWindow.h
+        EditorMenu.cpp
+        EditorMenu.h
         EditorPreset.cpp
         EditorPreset.h
+        ExpressionCodeTypes.h
         PresetEditorGUI.cpp
         PresetEditorGUI.h
         PresetFile.cpp
         PresetFile.h
-        EditorMenu.cpp
-        EditorMenu.h
         )
 
 target_link_libraries(PresetEditor

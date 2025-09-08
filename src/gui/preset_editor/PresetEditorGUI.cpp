@@ -1,5 +1,7 @@
 #include "PresetEditorGUI.h"
 
+#include "CodeContextInformation.h"
+#include "IconsFontAwesome7.h"
 #include "ProjectMGUI.h"
 
 #include "ProjectMSDLApplication.h"
@@ -12,6 +14,8 @@
 
 #include <Poco/NotificationCenter.h>
 #include <Poco/Util/Application.h>
+
+#include <sstream>
 
 namespace Editor {
 
@@ -126,6 +130,25 @@ void PresetEditorGUI::ReleaseProjectMControl()
     Poco::NotificationCenter::defaultCenter().postNotification(new UpdateWindowTitleNotification());
 }
 
+void PresetEditorGUI::EditCode(ExpressionCodeTypes type, std::string& code, int index)
+{
+    _textEditor.SetLanguageDefinition(CodeContextInformation::GetLanguageDefinition(type));
+    _textEditor.SetText(code);
+}
+
+unsigned long PresetEditorGUI::GetLoC(const std::string& code)
+{
+    std::istringstream iss(code);
+    unsigned long loc = 0;
+    std::string line;
+    while (std::getline(iss, line))
+    {
+        ++loc;
+    }
+
+    return loc;
+}
+
 void PresetEditorGUI::DrawLeftSideBar()
 {
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
@@ -137,132 +160,31 @@ void PresetEditorGUI::DrawLeftSideBar()
     DrawGeneralParameters();
     DrawDefaultWaveformSettings();
     DrawMotionVectorSettings();
-
-    if (ImGui::CollapsingHeader("Warping and Motion"))
-    {
-        ImGui::TextUnformatted("Translation");
-        ImGui::Indent(16.0f);
-
-        ImGui::SliderFloat("Horizontal Motion", &_editorPreset.xPush, -1.00f, 1.0f);
-        DrawHelpTooltip("Controls amount of constant horizontal motion- -0.01 = move left 1% per frame, 0=none, 0.01 = move right 1%");
-
-        ImGui::SliderFloat("Vertical Motion", &_editorPreset.yPush, -1.00f, 1.0f);
-        DrawHelpTooltip("Controls amount of constant vertical motion. -0.01 = move up 1% per frame, 0=none, 0.01 = move down 1%");
-
-        ImGui::Unindent(16.0f);
-        ImGui::Spacing();
-
-        ImGui::TextUnformatted("Rotation");
-        ImGui::Indent(16.0f);
-
-        ImGui::SliderFloat("Rotation##WarpRotation", &_editorPreset.rot, -1.00f, 1.0f);
-        DrawHelpTooltip("Controls the amount of rotation. 0=none, 0.1=slightly right, -0.1=slightly clockwise, 0.1=CCW");
-
-        ImGui::SliderFloat("Center X##WarpCenterX", &_editorPreset.rotCX, 0.00f, 1.0f);
-        DrawHelpTooltip("Controls where the center of rotation and stretching is, horizontally.  0=left, 0.5=center, 1=right");
-
-        ImGui::SliderFloat("Center Y##WarpCenterY", &_editorPreset.rotCY, 0.00f, 1.0f);
-        DrawHelpTooltip("Controls where the center of rotation and stretching is, vertically.  0=top, 0.5=center, 1=bottom");
-
-        ImGui::Unindent(16.0f);
-        ImGui::Spacing();
-
-        ImGui::TextUnformatted("Scaling");
-        ImGui::Indent(16.0f);
-
-        ImGui::SliderFloat("Stretch X##WarpStretchX", &_editorPreset.stretchX, 0.00f, 2.0f);
-        DrawHelpTooltip("Controls amount of constant horizontal stretching. 0.99=shrink 1%, 1=normal, 1.01=stretch 1%");
-
-        ImGui::SliderFloat("Stretch Y##WarpStretchY", &_editorPreset.stretchY, 0.00f, 2.0f);
-        DrawHelpTooltip("Controls amount of constant vertical stretching. 0.99=shrink 1%, 1=normal, 1.01=stretch 1%");
-
-        ImGui::SliderFloat("Zoom##WarpZoom", &_editorPreset.zoom, 0.00f, 2.0f);
-        DrawHelpTooltip("Controls inward/outward motion.  0.9=zoom out 10% per frame, 1.0=no zoom, 1.1=zoom in 10%");
-
-        ImGui::SliderFloat("Zoom Exponent##Warp", &_editorPreset.zoomExponent, 0.00f, 5.0f);
-        DrawHelpTooltip("Controls the curvature of the zoom; 1=normal");
-
-        ImGui::Unindent(16.0f);
-        ImGui::Spacing();
-
-        ImGui::TextUnformatted("Warping");
-        ImGui::Indent(16.0f);
-
-        ImGui::SliderFloat("Warp Amount##WarpAmount", &_editorPreset.warpAmount, 0.00f, 10.0f);
-        DrawHelpTooltip("Controls the magnitude of the warping. 0=none, 1=normal, 2=major warping...");
-
-        ImGui::SliderFloat("Warp Scale##WarpScale", &_editorPreset.warpScale, 0.00f, 10.0f);
-        DrawHelpTooltip("Controls the scale of the warp effect.");
-
-        ImGui::SliderFloat("Warp Animation Speed##WarpAnimSpeed", &_editorPreset.warpAnimSpeed, 0.00f, 5.0f);
-        DrawHelpTooltip("Controls the speed of the warp effect.");
-
-        ImGui::Unindent(16.0f);
-        ImGui::Spacing();
-
-        ImGui::TextUnformatted("Options");
-        ImGui::Indent(16.0f);
-
-        ImGui::Unindent(16.0f);
-        ImGui::Spacing();
-
-    }
-
-    if (ImGui::CollapsingHeader("Motion Code"))
-    {
-
-        if (ImGui::Button("Per-Frame Init"))
-        {
-            EditCode(_editorPreset.perFrameInitCode, false);
-        }
-        if (ImGui::Button("Per-Frame Code"))
-        {
-            EditCode(_editorPreset.perFrameCode, false);
-        }
-        if (ImGui::Button("Per-Vertex Code"))
-        {
-            EditCode(_editorPreset.perPixelCode, false);
-        }
-    }
-
+    DrawWarpMotionSettings();
+    DrawMotionCodeSettings();
     DrawBorderSettings();
 
     if (ImGui::CollapsingHeader("Custom Waveforms"))
     {
+        ImGui::Indent(16.0f);
+        for (auto& wave : _editorPreset.waves)
+        {
+            DrawCustomWaveSettings(wave);
+        }
+        ImGui::Unindent(16.0f);
     }
 
     if (ImGui::CollapsingHeader("Custom Shapes"))
     {
-    }
-
-    bool shaderTabDisabled = _editorPreset.presetVersion < 200 || (_editorPreset.warpShaderVersion < 2 && _editorPreset.compositeShaderVersion < 2);
-
-    ImGui::BeginDisabled(shaderTabDisabled);
-    if (ImGui::CollapsingHeader("Warp / Composite Shaders"))
-    {
-        if (!_editorPreset.warpShader.empty())
+        ImGui::Indent(16.0f);
+        for (auto& shape : _editorPreset.shapes)
         {
-            if (ImGui::Button("Warp Shader"))
-            {
-                EditCode(_editorPreset.warpShader, true);
-            }
+            DrawCustomShapeSettings(shape);
         }
-        if (!_editorPreset.compositeShader.empty())
-        {
-            if (ImGui::Button("Composite Shader"))
-            {
-                EditCode(_editorPreset.compositeShader, true);
-            }
-        }
+        ImGui::Unindent(16.0f);
     }
-    if (shaderTabDisabled)
-    {
-        DrawHelpTooltip("To enable HLSL shaders, open the compatibility settings and set the "
-                        "preset version to 200 or higher and the PS version to 2 or higher.");
-    }
-    ImGui::EndDisabled();
 
-    DrawShaderLossWarning();
+    DrawShaderCodeSettings();
 
     ImGui::EndChild();
 
@@ -271,7 +193,9 @@ void PresetEditorGUI::DrawLeftSideBar()
     ImGui::SetNextWindowBgAlpha(0.5f);
     ImGui::BeginChild("CodeEditor", ImVec2(0, 500), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, window_flags);
 
+    ImGui::PushID("CodeEditor");
     _textEditor.Render("Code Editor");
+    ImGui::PopID();
 
     ImGui::EndChild();
 
@@ -304,9 +228,12 @@ void PresetEditorGUI::DrawPresetCompatibilitySettings()
                             case 0:
                             default:
                                 _editorPreset.presetVersion = 140;
+                                _editorPreset.warpShaderVersion = 0;
+                                _editorPreset.compositeShaderVersion = 0;
                                 break;
                             case 1:
                                 _editorPreset.presetVersion = 200;
+                                _editorPreset.compositeShaderVersion = _editorPreset.warpShaderVersion;
                                 break;
                             case 2:
                                 _editorPreset.presetVersion = 201;
@@ -332,7 +259,7 @@ void PresetEditorGUI::DrawPresetCompatibilitySettings()
             {
                 _editorPreset.compositeShaderVersion = _editorPreset.warpShaderVersion;
             }
-            DrawHelpTooltip("Minimum required DirectX Pixel Shader version. 0/1=No PS, 2=PS 2.0, 3=PS 2.x, 4=PS 3.0 (Ctrl-click to set higher value)");
+            DrawHelpTooltip("Minimum required DirectX Pixel Shader version.\n0/1=No PS, 2=PS 2.0, 3=PS 2.x, 4=PS 3.0 (Ctrl-click to set higher value)");
 
             ImGui::Unindent(16.0f);
         }
@@ -342,9 +269,9 @@ void PresetEditorGUI::DrawPresetCompatibilitySettings()
             ImGui::Indent(16.0f);
 
             ImGui::SliderInt("Warp PS Version", &_editorPreset.warpShaderVersion, 0, 4);
-            DrawHelpTooltip("Minimum required DirectX Pixel Shader version for the warp shader. 0/1=No PS, 2=PS 2.0, 3=PS 2.x, 4=PS 3.0 (Ctrl-click to set higher value)");
+            DrawHelpTooltip("Minimum required DirectX Pixel Shader version for the warp shader.\n0/1=No PS, 2=PS 2.0, 3=PS 2.x, 4=PS 3.0 (Ctrl-click to set higher value)");
             ImGui::SliderInt("Composite PS Version", &_editorPreset.compositeShaderVersion, 0, 4);
-            DrawHelpTooltip("Minimum required DirectX Pixel Shader version for the composite shader. 0/1=No PS, 2=PS 2.0, 3=PS 2.x, 4=PS 3.0 (Ctrl-click to set higher value)");
+            DrawHelpTooltip("Minimum required DirectX Pixel Shader version for the composite shader.\n0/1=No PS, 2=PS 2.0, 3=PS 2.x, 4=PS 3.0 (Ctrl-click to set higher value)");
 
             ImGui::Unindent(16.0f);
         }
@@ -355,26 +282,30 @@ void PresetEditorGUI::DrawGeneralParameters()
 {
     if (ImGui::CollapsingHeader("General Parameters"))
     {
+        bool usesCompositeShader = _editorPreset.presetVersion >= 200 && _editorPreset.compositeShaderVersion >= 2;
+
         ImGui::TextUnformatted("Post-Processing Filters");
         ImGui::Indent(16.0f);
 
         ImGui::SliderFloat("Decay##PerFrameDecay", &_editorPreset.decay, 0.00f, 1.0f);
-        DrawHelpTooltip("Controls the eventual fade to black. 1=no fade, 0.9=strong fade, 0.98=recommended");
+        DrawHelpTooltip("Controls the eventual fade to black.\n1=no fade, 0.9=strong fade, 0.98=recommended");
+
+        ImGui::BeginDisabled(usesCompositeShader);
 
         ImGui::SliderFloat("Gamma Adjustment##GammaAdjustment", &_editorPreset.gammaAdj, 0.00f, 10.0f);
-        DrawHelpTooltip("Controls display brightness. 1=normal, 2=double, 3=triple, etc.");
+        DrawHelpTooltip("Controls display brightness.\n1=normal, 2=double, 3=triple, etc.\nOnly applied if no composite shader is used!");
 
         ImGui::Checkbox("Brighten", &_editorPreset.brighten);
-        DrawHelpTooltip("Brightens the darker parts of the image (nonlinear; square root filter)");
+        DrawHelpTooltip("Brightens the darker parts of the image (nonlinear; square root filter)\nOnly applied if no composite shader is used!");
 
         ImGui::Checkbox("Darken", &_editorPreset.darken);
-        DrawHelpTooltip("Darkens the brighter parts of the image (nonlinear; squaring filter)");
+        DrawHelpTooltip("Darkens the brighter parts of the image (nonlinear; squaring filter)\nOnly applied if no composite shader is used!");
 
         ImGui::Checkbox("Solarize", &_editorPreset.solarize);
-        DrawHelpTooltip("Emphasizes mid-range colors");
+        DrawHelpTooltip("Emphasizes mid-range colors\nOnly applied if no composite shader is used!");
 
         ImGui::Checkbox("Invert", &_editorPreset.invert);
-        DrawHelpTooltip("Inverts the colors in the image");
+        DrawHelpTooltip("Inverts the colors in the image\nOnly applied if no composite shader is used!");
 
         ImGui::Checkbox("Darken Center", &_editorPreset.darkenCenter);
         DrawHelpTooltip("Darkens a diamond-shaped area in the center of the image.\nApplied after drawing shapes/waveforms, but before drawing borders.");
@@ -391,10 +322,10 @@ void PresetEditorGUI::DrawGeneralParameters()
         ImGui::TextUnformatted("Video Echo");
         ImGui::Indent(16.0f);
         ImGui::SliderFloat("Zoom##VideoEchoZoom", &_editorPreset.videoEchoZoom, 0.01f, 10.0f);
-        DrawHelpTooltip("Controls the size of the second graphics layer");
+        DrawHelpTooltip("Controls the size of the second graphics layer\nOnly applied if no composite shader is used!");
 
         ImGui::SliderFloat("Alpha##VideoEchoAlpha", &_editorPreset.videoEchoAlpha, 0.00f, 1.0f);
-        DrawHelpTooltip("Controls the opacity of the second graphics layer. 0=transparent (off), 0.5=half-mix, 1=opaque");
+        DrawHelpTooltip("Controls the opacity of the second graphics layer.\n0=transparent (off), 0.5=half-mix, 1=opaque\nOnly applied if no composite shader is used!");
 
         {
             int selectionIndex = _editorPreset.videoEchoOrientation % 4;
@@ -415,10 +346,12 @@ void PresetEditorGUI::DrawGeneralParameters()
 
                 ImGui::EndCombo();
             }
-            DrawHelpTooltip("Selects an orientation for the second graphics layer.");
+            DrawHelpTooltip("Selects an orientation for the second graphics layer.\nOnly applied if no composite shader is used!");
         }
-        ImGui::Unindent(16.0f);
 
+        ImGui::EndDisabled();
+
+        ImGui::Unindent(16.0f);
         ImGui::Spacing();
 
         ImGui::TextUnformatted("Blur Texture Value Range");
@@ -463,13 +396,13 @@ void PresetEditorGUI::DrawDefaultWaveformSettings()
         DrawHelpTooltip("The waveform's lines (or dots) are drawn with double thickness");
 
         ImGui::SliderFloat("Scale##DefaultWaveformScale", &_editorPreset.waveScale, 0.00f, 5.0f);
-        DrawHelpTooltip("Scaling factor of the waveform. 1 = original size, 2 = twice the size, 0.5  = half the size");
+        DrawHelpTooltip("Scaling factor of the waveform.\n1 = original size, 2 = twice the size, 0.5  = half the size");
 
         ImGui::SliderFloat("Smoothing##DefaultWaveformSmoothing", &_editorPreset.waveSmoothing, 0.00f, 1.0f);
-        DrawHelpTooltip("Smoothing of the waveform. 0 = no smoothing, 0.75 = heavy smoothing");
+        DrawHelpTooltip("Smoothing of the waveform.\n0 = no smoothing, 0.75 = heavy smoothing");
 
         ImGui::SliderFloat("Mystery Param##DefaultWaveformParam", &_editorPreset.waveParam, -1.00f, 1.0f);
-        DrawHelpTooltip("This value does different things depending on the mode. For example, it could control angle at which the waveform was drawn.");
+        DrawHelpTooltip("This value does different things depending on the mode.\nFor example, it could control angle at which the waveform was drawn.");
 
         ImGui::Unindent(16.0f);
         ImGui::Spacing();
@@ -479,10 +412,10 @@ void PresetEditorGUI::DrawDefaultWaveformSettings()
         ImGui::Indent(16.0f);
 
         ImGui::SliderFloat("X##DefaultWaveformX", &_editorPreset.waveX, 0.00f, 1.0f);
-        DrawHelpTooltip("Position of the waveform. 0 = far left edge of screen, 0.5 = center, 1 = far right");
+        DrawHelpTooltip("Position of the waveform.\n0 = far left edge of screen, 0.5 = center, 1 = far right");
 
         ImGui::SliderFloat("Y##DefaultWaveformY", &_editorPreset.waveY, 0.00f, 1.0f);
-        DrawHelpTooltip("Position of the waveform. 0 = very bottom of screen, 0.5 = center, 1 = top");
+        DrawHelpTooltip("Position of the waveform.\n0 = very bottom of screen, 0.5 = center, 1 = top");
 
         ImGui::Unindent(16.0f);
         ImGui::Spacing();
@@ -574,20 +507,14 @@ void PresetEditorGUI::DrawMotionVectorSettings()
 
         ImGui::Indent(16.0f);
 
-        if (ImGui::SliderFloat("Size X##MotionVectorX", &_editorPreset.mvX, 0.00f, 64.0f))
-        {
-            _editorPreset.waveX = std::min(0.0f, std::max(64.0f, _editorPreset.mvX));
-        }
+        ImGui::SliderFloat("Size X##MotionVectorX", &_editorPreset.mvX, 0.00f, 64.0f);
         DrawHelpTooltip("The number of motion vectors in the X direction");
 
-        if (ImGui::SliderFloat("size Y##MotionVectorY", &_editorPreset.mvY, 0.00f, 48.0f))
-        {
-            _editorPreset.waveY = std::min(0.0f, std::max(48.0f, _editorPreset.mvY));
-        }
+        ImGui::SliderFloat("size Y##MotionVectorY", &_editorPreset.mvY, 0.00f, 48.0f);
         DrawHelpTooltip("The number of motion vectors in the Y direction");
 
         ImGui::SliderFloat("Length##MotionVectorLength", &_editorPreset.mvL, 0.00f, 5.0f);
-        DrawHelpTooltip("The length of the motion vectors (0=no trail, 1=normal, 2=double...)");
+        DrawHelpTooltip("The length of the motion vectors\n0=no trail, 1=normal, 2=double...");
 
         ImGui::SliderFloat("X Offset##MotionVectorOffsetX", &_editorPreset.mvDX, -1.00f, 1.0f);
         DrawHelpTooltip("Horizontal placement offset of the motion vectors");
@@ -604,6 +531,147 @@ void PresetEditorGUI::DrawMotionVectorSettings()
 
         ImGui::ColorEdit4("Color##MotionVectorColor", &_editorPreset.mvColor.red, ImGuiColorEditFlags_Float);
         DrawHelpTooltip("The color of the motion vector grid");
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+    }
+}
+
+void PresetEditorGUI::DrawMotionCodeSettings()
+{
+    if (ImGui::CollapsingHeader("Motion Code"))
+    {
+
+        ImGui::TextUnformatted("Per-Frame Init");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        DrawHelpTooltip("This code will only run once when the preset is loaded.\n"
+                        "It can be used to set up the Per-Frame, qXX, regXX and megabuf variables to known initial (non-zero) values.\n"
+                        "Calculations only required once can also be done in this code.");
+
+        ImGui::Indent(16.0f);
+
+        if (ImGui::Button(ICON_FA_PENCIL " Edit##EditPerFrameInitCode"))
+        {
+            EditCode(ExpressionCodeTypes::PerFrameInit, _editorPreset.perFrameInitCode);
+        }
+        ImGui::SameLine();
+        ImGui::Text("(%lu lines / %lu characters)", GetLoC(_editorPreset.perFrameInitCode), _editorPreset.perFrameInitCode.length());
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+
+        ImGui::TextUnformatted("Per-Frame");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        DrawHelpTooltip("This code runs at the very beginning of each rendered frame.\n"
+                        "Any complex/expensive calculations should be done here, eventually passing the results via qXX or regXX vars"
+                        "or gmegabuf to effects later in the rendering process.\n"
+                        "All qXX var values set here are copied to the Per-Vertex code and all custom waveforms and shapes.");
+
+        ImGui::Indent(16.0f);
+
+        if (ImGui::Button(ICON_FA_PENCIL " Edit##EditPerFrameCode"))
+        {
+            EditCode(ExpressionCodeTypes::PerFrame, _editorPreset.perFrameCode);
+        }
+        ImGui::SameLine();
+        ImGui::Text("(%lu lines / %lu characters)", GetLoC(_editorPreset.perFrameCode), _editorPreset.perFrameCode.length());
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+
+        ImGui::TextUnformatted("Per-Vertex");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        DrawHelpTooltip("This code is executed for every grid vertex in the warp mesh.\n"
+                        "Since this code may run several thousand times PER FRAME, it is key to keep it fast and slim.\n"
+                        "Any values which don't depend on the x/y grid coordinates should be pre-calculated in the Per-Frame code"
+                        "and passed in via qXX or regXX vars or using gmegabuf.\n"
+                        "Also known als \"Per-Pixel\" code.");
+
+        ImGui::Indent(16.0f);
+
+        if (ImGui::Button(ICON_FA_PENCIL " Edit##EditPerVertexCode"))
+        {
+            EditCode(ExpressionCodeTypes::PerVertex, _editorPreset.perPixelCode);
+        }
+        ImGui::SameLine();
+        ImGui::Text("(%lu lines / %lu characters)", GetLoC(_editorPreset.perPixelCode), _editorPreset.perPixelCode.length());
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+    }
+}
+
+void PresetEditorGUI::DrawWarpMotionSettings()
+{
+    if (ImGui::CollapsingHeader("Warping and Motion"))
+    {
+        ImGui::TextUnformatted("Translation");
+        ImGui::Indent(16.0f);
+
+        ImGui::SliderFloat("Horizontal Motion", &_editorPreset.xPush, -1.00f, 1.0f);
+        DrawHelpTooltip("Controls amount of constant horizontal motion.\n-0.01 = move left 1% per frame, 0=none, 0.01 = move right 1%");
+
+        ImGui::SliderFloat("Vertical Motion", &_editorPreset.yPush, -1.00f, 1.0f);
+        DrawHelpTooltip("Controls amount of constant vertical motion.\n-0.01 = move up 1% per frame, 0=none, 0.01 = move down 1%");
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::TextUnformatted("Rotation");
+        ImGui::Indent(16.0f);
+
+        ImGui::SliderFloat("Rotation##WarpRotation", &_editorPreset.rot, -1.00f, 1.0f);
+        DrawHelpTooltip("Controls the amount of rotation.\n0=none, 0.1=slightly right, -0.1=slightly clockwise, 0.1=CCW");
+
+        ImGui::SliderFloat("Center X##WarpCenterX", &_editorPreset.rotCX, 0.00f, 1.0f);
+        DrawHelpTooltip("Controls where the center of rotation and stretching is, horizontally.\n0=left, 0.5=center, 1=right");
+
+        ImGui::SliderFloat("Center Y##WarpCenterY", &_editorPreset.rotCY, 0.00f, 1.0f);
+        DrawHelpTooltip("Controls where the center of rotation and stretching is, vertically.\n0=top, 0.5=center, 1=bottom");
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::TextUnformatted("Scaling");
+        ImGui::Indent(16.0f);
+
+        ImGui::SliderFloat("Stretch X##WarpStretchX", &_editorPreset.stretchX, 0.00f, 2.0f);
+        DrawHelpTooltip("Controls amount of constant horizontal stretching.\n0.99=shrink 1%, 1=normal, 1.01=stretch 1%");
+
+        ImGui::SliderFloat("Stretch Y##WarpStretchY", &_editorPreset.stretchY, 0.00f, 2.0f);
+        DrawHelpTooltip("Controls amount of constant vertical stretching.\n0.99=shrink 1%, 1=normal, 1.01=stretch 1%");
+
+        ImGui::SliderFloat("Zoom##WarpZoom", &_editorPreset.zoom, 0.00f, 2.0f);
+        DrawHelpTooltip("Controls inward/outward motion.\n0.9=zoom out 10% per frame, 1.0=no zoom, 1.1=zoom in 10%");
+
+        ImGui::SliderFloat("Zoom Exponent##Warp", &_editorPreset.zoomExponent, 0.00f, 5.0f);
+        DrawHelpTooltip("Controls the curvature of the zoom; 1=normal");
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::TextUnformatted("Warping");
+        ImGui::Indent(16.0f);
+
+        ImGui::SliderFloat("Warp Amount##WarpAmount", &_editorPreset.warpAmount, 0.00f, 10.0f);
+        DrawHelpTooltip("Controls the magnitude of the warping.\n0=none, 1=normal, 2=major warping...");
+
+        ImGui::SliderFloat("Warp Scale##WarpScale", &_editorPreset.warpScale, 0.00f, 10.0f);
+        DrawHelpTooltip("Controls the scale of the warp effect.");
+
+        ImGui::SliderFloat("Warp Animation Speed##WarpAnimSpeed", &_editorPreset.warpAnimSpeed, 0.00f, 5.0f);
+        DrawHelpTooltip("Controls the speed of the warp effect.");
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::TextUnformatted("Options");
+        ImGui::Indent(16.0f);
 
         ImGui::Unindent(16.0f);
         ImGui::Spacing();
@@ -639,6 +707,350 @@ void PresetEditorGUI::DrawBorderSettings()
 
         ImGui::Spacing();
     }
+}
+
+void PresetEditorGUI::DrawCustomWaveSettings(EditorPreset::Wave& waveform)
+{
+    std::string idx = std::to_string(waveform.index + 1);
+
+    ImGui::PushID(std::string("CustomWave" + idx).c_str());
+
+    if (ImGui::CollapsingHeader(std::string("Waveform " + idx).c_str()))
+    {
+        ImGui::Checkbox("Enabled", &waveform.enabled);
+        DrawHelpTooltip("This waveform is only rendered if enabled explicitly.");
+
+        ImGui::Spacing();
+
+        ImGui::BeginDisabled(!waveform.enabled);
+
+        ImGui::TextUnformatted("Position And Style");
+        ImGui::Indent(16.0f);
+
+        ImGui::SliderFloat("X", &waveform.x, 0.0f, 1.0f);
+        DrawHelpTooltip("Horizontal position of the waveform.\n"
+                        "0=left, 0.5=center, 1=right");
+
+        ImGui::SliderFloat("Y", &waveform.x, 0.0f, 1.0f);
+        DrawHelpTooltip("Vertical position of the waveform.\n"
+                        "0=bottom, 0.5=center, 1=top");
+
+        ImGui::SliderInt("Samples", &waveform.samples, 1, 512);
+        DrawHelpTooltip("Number of waveform points to draw.");
+
+        ImGui::SliderInt("Separation", &waveform.sep, 0, 255);
+        DrawHelpTooltip("Separation distance of dual waveforms.");
+
+        ImGui::SliderFloat("Scaling", &waveform.scaling, 0.0f, 10.0f);
+        DrawHelpTooltip("Waveform value scaling factor.");
+
+        ImGui::SliderFloat("Smoothing", &waveform.scaling, 0.0f, 1.0f);
+        DrawHelpTooltip("Waveform smoothing value.\n"
+                        "0.0=no smoothing, 0.5=default, 1.0=extreme smoothing");
+
+        ImGui::ColorEdit4("Color", &waveform.color.red, ImGuiColorEditFlags_Float);
+        DrawHelpTooltip("The default color of the waveform.");
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::TextUnformatted("Drawing Flags");
+        ImGui::Indent(16.0f);
+
+        ImGui::Checkbox("Spectrum", &waveform.spectrum);
+        DrawHelpTooltip("Use spectrum instead of oscilloscope data.");
+
+        ImGui::Checkbox("Dots", &waveform.useDots);
+        DrawHelpTooltip("Draw Waveform as dots instead of lines.");
+
+        ImGui::Checkbox("Thick", &waveform.drawThick);
+        DrawHelpTooltip("Draw waveform lines or dots twice as thick.");
+
+        ImGui::Checkbox("Additive", &waveform.additive);
+        DrawHelpTooltip("Use additive color blending when drawing.");
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::TextUnformatted("Drawing Code");
+        ImGui::Indent(16.0f);
+
+        ImGui::TextUnformatted("Initialization");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        DrawHelpTooltip("This code will only run once when the preset is loaded.\n"
+                        "It can be used to set up variables specific to this waveform to"
+                        " known initial (non-zero) values. The waveform tX variables can also be initialized here.");
+
+        ImGui::Indent(16.0f);
+
+        if (ImGui::Button(ICON_FA_PENCIL " Edit##InitCode"))
+        {
+            EditCode(ExpressionCodeTypes::CustomWaveInit, waveform.initCode, waveform.index + 1);
+        }
+        ImGui::SameLine();
+        ImGui::Text("(%lu lines / %lu characters)", GetLoC(waveform.initCode), waveform.initCode.length());
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+
+        ImGui::TextUnformatted("Per-Frame");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        DrawHelpTooltip("This code runs once before rendering the waveform.\n"
+                        "Any complex/expensive calculations should be done here, eventually passing the results via qXX/tX vars "
+                        "or (g)megabuf to the per-point code.\n"
+                        "All qXX/tX var values set here are copied to each Per-Point code instance.");
+
+        ImGui::Indent(16.0f);
+
+        if (ImGui::Button(ICON_FA_PENCIL " Edit##PerFrameCode"))
+        {
+            EditCode(ExpressionCodeTypes::CustomWavePerFrame, waveform.perFrameCode, waveform.index + 1);
+        }
+        ImGui::SameLine();
+        ImGui::Text("(%lu lines / %lu characters)", GetLoC(waveform.perFrameCode), waveform.perFrameCode.length());
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+
+        ImGui::TextUnformatted("Per-Point");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        DrawHelpTooltip("This code is executed for every point of the waveform.\n"
+                        "This allows full control over the placement of each vertex of the waveform, "
+                        "enabling drawing arbitrary shapes.");
+
+        ImGui::Indent(16.0f);
+
+        if (ImGui::Button(ICON_FA_PENCIL " Edit##PerPointCode"))
+        {
+            EditCode(ExpressionCodeTypes::CustomWavePerPoint, waveform.perPointCode, waveform.index + 1);
+        }
+        ImGui::SameLine();
+        ImGui::Text("(%lu lines / %lu characters)", GetLoC(waveform.perPointCode), waveform.perPointCode.length());
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::EndDisabled();
+    }
+    else if (waveform.enabled)
+    {
+        ImGui::SameLine();
+        ImGui::TextDisabled(" " ICON_FA_CHECK " Enabled");
+    }
+
+    ImGui::PopID();
+}
+
+void PresetEditorGUI::DrawCustomShapeSettings(EditorPreset::Shape& shape)
+{
+    std::string idx = std::to_string(shape.index + 1);
+
+    ImGui::PushID(std::string("CustomShape" + idx).c_str());
+
+    if (ImGui::CollapsingHeader(std::string("Shape " + idx).c_str()))
+    {
+        ImGui::Checkbox("Enabled", &shape.enabled);
+        DrawHelpTooltip("This shape is only rendered if enabled explicitly.");
+
+        ImGui::Spacing();
+
+        ImGui::BeginDisabled(!shape.enabled);
+
+        ImGui::TextUnformatted("Position And Style");
+        ImGui::Indent(16.0f);
+
+        ImGui::SliderFloat("X", &shape.x, 0.0f, 1.0f);
+        DrawHelpTooltip("Default horizontal position of the shape.\n"
+                        "0=left, 0.5=center, 1=right");
+
+        ImGui::SliderFloat("Y", &shape.y, 0.0f, 1.0f);
+        DrawHelpTooltip("Default vertical position of the shape.\n"
+                        "0=bottom, 0.5=center, 1=top");
+
+        ImGui::SliderFloat("Radius", &shape.radius, 0.001f, 10.0f);
+        DrawHelpTooltip("Default radius of the shape.");
+
+        ImGui::SliderFloat("Angle", &shape.angle, 0.0f, 2 * 3.14159265358979323846);
+        DrawHelpTooltip("Default rotation angle of the shape.");
+
+        ImGui::SliderInt("Sides", &shape.sides, 3, 100);
+        DrawHelpTooltip("The default number of sides that make up the polygonal shape.");
+
+        ImGui::SliderInt("Instances", &shape.instances, 1, 1024);
+        DrawHelpTooltip("The total number of instances (the number of times to repeat the per-frame equations for, and draw, this shape).");
+
+        ImGui::ColorEdit4("Inner Color", &shape.color.red, ImGuiColorEditFlags_Float);
+        DrawHelpTooltip("The default color and opacity towards the center of the shape.");
+
+        ImGui::ColorEdit4("Outer Color", &shape.color2.red, ImGuiColorEditFlags_Float);
+        DrawHelpTooltip("The default color and opacity towards the outer edge of the shape");
+
+        ImGui::ColorEdit4("Border Color", &shape.borderColor.red, ImGuiColorEditFlags_Float);
+        DrawHelpTooltip("The default color and opacity of the border of the shape");
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::TextUnformatted("Texturing");
+        ImGui::Indent(16.0f);
+
+        ImGui::Checkbox("Textured", &shape.textured);
+        DrawHelpTooltip("If enabled, the shape will be textured with the image from the previous frame.");
+
+        ImGui::BeginDisabled(!shape.textured);
+
+        ImGui::SliderFloat("Angle##Texture", &shape.tex_ang, 0.0f, 2 * 3.14159265358979323846);
+        DrawHelpTooltip("The angle at which to rotate the previous frame's image before applying it to the shape.");
+
+        ImGui::SliderFloat("Zoom##Texture", &shape.tex_zoom, 0.001f, 10.0f);
+        DrawHelpTooltip("The portion of the previous frame's image to use with the shape.");
+
+        ImGui::EndDisabled();
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::TextUnformatted("Drawing Flags");
+        ImGui::Indent(16.0f);
+        ImGui::Checkbox("Thick Outline", &shape.thickOutline);
+        DrawHelpTooltip("If enabled, the border will be overdrawn 4 times to make it thicker, bolder, and more visible.");
+
+        ImGui::Checkbox("Additive", &shape.additive);
+        DrawHelpTooltip("If enabled, the shape will add color to saturate the image toward white; otherwise, it will replace what's there.");
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::TextUnformatted("Drawing Code");
+        ImGui::Indent(16.0f);
+
+        ImGui::TextUnformatted("Initialization");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        DrawHelpTooltip("This code will only run once when the preset is loaded.\n"
+                        "It can be used to set up variables specific to this shape to"
+                        " known initial (non-zero) values. The shape tX variables can ONLY be initialized here.");
+
+        ImGui::Indent(16.0f);
+
+        if (ImGui::Button(ICON_FA_PENCIL " Edit##InitCode"))
+        {
+            EditCode(ExpressionCodeTypes::CustomShapeInit, shape.initCode, shape.index + 1);
+        }
+        ImGui::SameLine();
+        ImGui::Text("(%lu lines / %lu characters)", GetLoC(shape.initCode), shape.initCode.length());
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+
+        ImGui::TextUnformatted("Per-Frame");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        DrawHelpTooltip("This code runs once per shape instance.\n"
+                        "Any complex/expensive calculations should be done in the preset per-frame code, eventually passing the results via qXX/tX vars "
+                        "or gmegabuf to the shape per-frame code. The tX variables are reset to their init values for each instance.");
+
+        ImGui::Indent(16.0f);
+
+        if (ImGui::Button(ICON_FA_PENCIL " Edit##PerFrameCode"))
+        {
+            EditCode(ExpressionCodeTypes::CustomShapePerFrame, shape.perFrameCode, shape.index + 1);
+        }
+        ImGui::SameLine();
+        ImGui::Text("(%lu lines / %lu characters)", GetLoC(shape.perFrameCode), shape.perFrameCode.length());
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::EndDisabled();
+    }
+    else if (shape.enabled)
+    {
+        ImGui::SameLine();
+        ImGui::TextDisabled(" " ICON_FA_CHECK " Enabled");
+    }
+
+    ImGui::PopID();
+}
+
+void PresetEditorGUI::DrawShaderCodeSettings()
+{
+    bool shaderTabDisabled = _editorPreset.presetVersion < 200 || (_editorPreset.warpShaderVersion < 2 && _editorPreset.compositeShaderVersion < 2);
+
+    ImGui::BeginDisabled(shaderTabDisabled);
+    if (ImGui::CollapsingHeader("Warp / Composite Shaders"))
+    {
+
+        ImGui::BeginDisabled(_editorPreset.warpShaderVersion < 2);
+
+        ImGui::TextUnformatted("Warp Shader");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        DrawHelpTooltip("The warp shader is used to draw the warp mesh, after the motion vectors were drawn but before "
+                        "any waveforms or shapes are rendered. It can be used to amend or replace the classic Milkdrop 1 "
+                        "warp effect. It is not necessary to use the previous image at all - this shader may create a new"
+                        "image on each frame, onto which waveforms and shapes are drawn.\n\n" ICON_FA_CODE
+                        " This shader must be written in DirectX HLSL.");
+
+        ImGui::Indent(16.0f);
+
+        if (ImGui::Button(ICON_FA_PENCIL " Edit##WarpShader"))
+        {
+            EditCode(ExpressionCodeTypes::WarpShader, _editorPreset.warpShader);
+        }
+        ImGui::SameLine();
+        ImGui::Text("(%lu lines / %lu characters)", GetLoC(_editorPreset.warpShader), _editorPreset.warpShader.length());
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::EndDisabled();
+
+        ImGui::BeginDisabled(_editorPreset.compositeShaderVersion < 2);
+
+        ImGui::TextUnformatted("Composite Shader");
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        DrawHelpTooltip("The composite shader runs immediately before displaying the preset image to the user, "
+                        "allowing post-processing of the previous rendering steps or even drawing a whole new image "
+                        "on top of it. The input (sampler_main) to the composite shader is passed on to the next frame, "
+                        "the output of the composite shader will only be displayed on screen and then discarded when "
+                        "the next frame is rendered.\n\n" ICON_FA_CODE " This shader must be written in DirectX HLSL.");
+
+        ImGui::Indent(16.0f);
+
+        if (ImGui::Button(ICON_FA_PENCIL " Edit##CompositeShader"))
+        {
+            EditCode(ExpressionCodeTypes::CompositeShader, _editorPreset.compositeShader);
+        }
+        ImGui::SameLine();
+        ImGui::Text("(%lu lines / %lu characters)", GetLoC(_editorPreset.compositeShader), _editorPreset.compositeShader.length());
+
+        ImGui::Unindent(16.0f);
+        ImGui::Spacing();
+
+        ImGui::EndDisabled();
+    }
+    if (shaderTabDisabled)
+    {
+        DrawHelpTooltip("To enable HLSL shaders, open the compatibility settings and set the "
+                        "preset version to 200 or higher and the PS version to 2 or higher.");
+    }
+    ImGui::EndDisabled();
+
+    DrawShaderLossWarning();
 }
 
 void PresetEditorGUI::DrawShaderLossWarning() const
@@ -683,20 +1095,6 @@ void PresetEditorGUI::DrawHelpTooltip(const std::string& helpText)
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
     }
-}
-
-void PresetEditorGUI::EditCode(const std::string& code, bool isShaderCode)
-{
-    if (isShaderCode)
-    {
-        _textEditor.SetLanguageDefinition(TextEditor::LanguageDefinition::HLSL());
-    }
-    else
-    {
-        _textEditor.SetLanguageDefinition(TextEditor::LanguageDefinition::MilkdropExpression());
-    }
-
-    _textEditor.SetText(code);
 }
 
 } // namespace Editor

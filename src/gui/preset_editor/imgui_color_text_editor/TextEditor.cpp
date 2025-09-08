@@ -2966,14 +2966,14 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::MilkdropEx
     if (!inited)
     {
         static const char* const nseel2Keywords[] = {
-            "loop", "while", "bnot", "equal", "below", "above", "assign", "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sqr", "sqrt", "pow", "exp", "_neg", "log", "log10", "abs", "min",
-            "max", "sign", "rand", "floor", "int", "ceil", "invsqrt", "sigmoid", "band", "bor", "exec2", "exec3", "_mem", "megabuf", "gmem", "gmegabuf", "freembuf", "memcpy", "memset"};
+            "if", "loop", "while", "bnot", "equal", "below", "above", "assign", "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sqr", "sqrt", "pow", "exp", "_neg", "log", "log10", "abs", "min",
+            "max", "sign", "rand", "floor", "int", "ceil", "invsqrt", "sigmoid", "band", "bor", "exec2", "exec3", "_mem", "megabuf", "gmem", "gmegabuf", "freembuf", "memcpy", "memset",
+            "_if", "_and", "_or", "_not", "_equal", "_noteq", "_below", "_above", "_beleq", "_aboeq", "_set", "_add", "_sub", "_mul", "_div", "_mod", "_mulop", "_divop", "_orop", "_andop", "_subop",
+            "_modop", "_powop", "_neg", "_gmem"};
         for (auto& k : nseel2Keywords)
             langDef.mKeywords.insert(k);
 
-        static const char* const identifiers[] = {
-            "_if", "_and", "_or", "_not", "_equal", "_noteq", "_below", "_above", "_beleq", "_aboeq", "_set", "_add", "_sub", "_mul", "_div", "_mod", "_mulop", "_divop", "_orop", "_andop", "_subop",
-            "_modop", "_powop", "_neg", "_gmem"};
+        static const char* const identifiers[] = {};
         for (auto& k : identifiers)
         {
             Identifier id;

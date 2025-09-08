@@ -1,9 +1,12 @@
 #include "ProjectMGUI.h"
 
-#include "AnonymousProFont.h"
-#include "LiberationSansFont.h"
 #include "ProjectMWrapper.h"
 #include "SDLRenderingWindow.h"
+
+#include "AnonymousProFont.h"
+#include "FontAwesomeIconsRegular7.h"
+#include "FontAwesomeIconsSolid7.h"
+#include "LiberationSansFont.h"
 
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -90,12 +93,20 @@ void ProjectMGUI::UpdateFontSize()
 
     _textScalingFactor = newScalingFactor;
 
-    ImFontConfig config;
-    config.MergeMode = true;
-
     io.Fonts->Clear();
-    _uiFont = io.Fonts->AddFontFromMemoryCompressedTTF(&AnonymousPro_compressed_data, AnonymousPro_compressed_size, floor(24.0f * _textScalingFactor));
-    _toastFont = io.Fonts->AddFontFromMemoryCompressedTTF(&LiberationSans_compressed_data, LiberationSans_compressed_size, floor(40.0f * _textScalingFactor));
+
+    ImFontConfig configMainFont;
+    configMainFont.MergeMode = false;
+
+    ImFontConfig configIconFont;
+    configIconFont.MergeMode = true;
+    configIconFont.GlyphMinAdvanceX = floor(24.0f * _textScalingFactor);
+
+    _uiFont = io.Fonts->AddFontFromMemoryCompressedTTF(&AnonymousPro_compressed_data, AnonymousPro_compressed_size, floor(24.0f * _textScalingFactor), &configMainFont);
+    io.Fonts->AddFontFromMemoryCompressedTTF(&FontAwesomeIconsSolid7_compressed_data, FontAwesomeIconsSolid7_compressed_size, floor(24.0f * _textScalingFactor), &configIconFont);
+    io.Fonts->AddFontFromMemoryCompressedTTF(&FontAwesomeIconsRegular7_compressed_data, FontAwesomeIconsRegular7_compressed_size, floor(24.0f * _textScalingFactor), &configIconFont);
+
+    _toastFont = io.Fonts->AddFontFromMemoryCompressedTTF(&LiberationSans_compressed_data, LiberationSans_compressed_size, floor(40.0f * _textScalingFactor), &configMainFont);
     io.Fonts->Build();
 
     ImGui::GetStyle().ScaleAllSizes(1.0);
@@ -193,6 +204,16 @@ void ProjectMGUI::PushToastFont()
 void ProjectMGUI::PushUIFont()
 {
     ImGui::PushFont(_uiFont);
+}
+
+void ProjectMGUI::PushSolidIconsFont()
+{
+    ImGui::PushFont(_fontAwesomeIconsSolid);
+}
+
+void ProjectMGUI::PushRegularIconsFont()
+{
+    ImGui::PushFont(_fontAwesomeIconsRegular);
 }
 
 void ProjectMGUI::PopFont()
