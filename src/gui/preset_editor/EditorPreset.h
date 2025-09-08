@@ -33,7 +33,7 @@ public:
     {
     public:
         int index{0}; //!< Custom waveform index in the preset.
-        int enabled{0}; //!< Render waveform if non-zero.
+        bool enabled{false}; //!< Render waveform if true.
         int samples{512}; //!< Number of samples/vertices in the waveform.
         int sep{0}; //!< Separation distance of dual waveforms.
 

@@ -114,7 +114,7 @@ void EditorPreset::FromParsedFile(const PresetFile& parsedFile)
         std::string const wavecodePrefix = "wavecode_" + std::to_string(index) + "_";
 
         wave.index = index;
-        wave.enabled = parsedFile.GetInt(wavecodePrefix + "enabled", wave.enabled);
+        wave.enabled = parsedFile.GetBool(wavecodePrefix + "enabled", wave.enabled);
         wave.samples = parsedFile.GetInt(wavecodePrefix + "samples", wave.samples);
         wave.sep = parsedFile.GetInt(wavecodePrefix + "sep", wave.sep);
         wave.spectrum = parsedFile.GetBool(wavecodePrefix + "bSpectrum", wave.spectrum);
@@ -148,7 +148,7 @@ void EditorPreset::FromParsedFile(const PresetFile& parsedFile)
         shape.additive = parsedFile.GetBool(shapecodePrefix + "additive", shape.additive);
         shape.thickOutline = parsedFile.GetBool(shapecodePrefix + "thickOutline", shape.thickOutline);
         shape.textured = parsedFile.GetBool(shapecodePrefix + "textured", shape.textured);
-        shape.instances = parsedFile.GetInt(shapecodePrefix + "nushape.inst", shape.instances);
+        shape.instances = parsedFile.GetInt(shapecodePrefix + "num_inst", shape.instances);
         shape.x = parsedFile.GetFloat(shapecodePrefix + "x", shape.x);
         shape.y = parsedFile.GetFloat(shapecodePrefix + "y", shape.y);
         shape.radius = parsedFile.GetFloat(shapecodePrefix + "rad", shape.radius);
@@ -285,7 +285,7 @@ void EditorPreset::ToParsedFile(PresetFile& parsedFile)
 
         std::string const wavecodePrefix = "wavecode_" + std::to_string(index) + "_";
 
-        parsedFile.SetInt(wavecodePrefix + "enabled", wave.enabled);
+        parsedFile.SetBool(wavecodePrefix + "enabled", wave.enabled);
         parsedFile.SetInt(wavecodePrefix + "samples", wave.samples);
         parsedFile.SetInt(wavecodePrefix + "sep", wave.sep);
         parsedFile.SetBool(wavecodePrefix + "bSpectrum", wave.spectrum);
