@@ -10,6 +10,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h" // for imGui::GetCurrentWindow()
 
+#include <iostream>
+
 // TODO
 // - multiline comments vs single-line: latter is blocking start of a ML
 
@@ -1059,11 +1061,15 @@ void TextEditor::Render()
         }
 
         // Draw a tooltip on known identifiers/preprocessor symbols
-        if (ImGui::IsMousePosValid())
+        if (ImGui::IsWindowHovered() && ImGui::IsMousePosValid())
         {
             auto id = GetWordAt(ScreenPosToCoordinates(ImGui::GetMousePos()));
             if (!id.empty())
             {
+                if (!mLanguageDefinition.mCaseSensitive)
+                {
+                    std::transform(id.begin(), id.end(), id.begin(), ::tolower);
+                }
                 auto it = mLanguageDefinition.mIdentifiers.find(id);
                 if (it != mLanguageDefinition.mIdentifiers.end())
                 {
@@ -2194,7 +2200,7 @@ void TextEditor::ColorizeRange(int aFromLine, int aToLine)
 
                     // todo : allmost all language definitions use lower case to specify keywords, so shouldn't this use ::tolower ?
                     if (!mLanguageDefinition.mCaseSensitive)
-                        std::transform(id.begin(), id.end(), id.begin(), ::toupper);
+                        std::transform(id.begin(), id.end(), id.begin(), ::tolower);
 
                     if (!line[first - bufferBegin].mPreprocessor)
                     {
@@ -2962,7 +2968,7 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::CPlusPlus(
 const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::MilkdropExpression()
 {
     static bool inited = false;
-    static LanguageDefinition langDef;
+    static LanguageDefinition milkdropLangDef;
     if (!inited)
     {
         static const char* const nseel2Keywords[] = {
@@ -2971,17 +2977,17 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::MilkdropEx
             "_if", "_and", "_or", "_not", "_equal", "_noteq", "_below", "_above", "_beleq", "_aboeq", "_set", "_add", "_sub", "_mul", "_div", "_mod", "_mulop", "_divop", "_orop", "_andop", "_subop",
             "_modop", "_powop", "_neg", "_gmem"};
         for (auto& k : nseel2Keywords)
-            langDef.mKeywords.insert(k);
+            milkdropLangDef.mKeywords.insert(k);
 
         static const char* const identifiers[] = {};
         for (auto& k : identifiers)
         {
             Identifier id;
             id.mDeclaration = "Internal function";
-            langDef.mIdentifiers.insert(std::make_pair(std::string(k), id));
+            milkdropLangDef.mIdentifiers.insert(std::make_pair(std::string(k), id));
         }
 
-        langDef.mTokenize = [](const char* in_begin, const char* in_end, const char*& out_begin, const char*& out_end, PaletteIndex& paletteIndex) -> bool {
+        milkdropLangDef.mTokenize = [](const char* in_begin, const char* in_end, const char*& out_begin, const char*& out_end, PaletteIndex& paletteIndex) -> bool {
             paletteIndex = PaletteIndex::Max;
 
             while (in_begin < in_end && isascii(*in_begin) && isblank(*in_begin))
@@ -3005,18 +3011,18 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::MilkdropEx
             return paletteIndex != PaletteIndex::Max;
         };
 
-        langDef.mCommentStart = "/*";
-        langDef.mCommentEnd = "*/";
-        langDef.mSingleLineComment = "//";
+        milkdropLangDef.mCommentStart = "/*";
+        milkdropLangDef.mCommentEnd = "*/";
+        milkdropLangDef.mSingleLineComment = "//";
 
-        langDef.mCaseSensitive = true;
-        langDef.mAutoIndentation = true;
+        milkdropLangDef.mCaseSensitive = false;
+        milkdropLangDef.mAutoIndentation = true;
 
-        langDef.mName = "Milkdrop Expression";
+        milkdropLangDef.mName = "Milkdrop Expression";
 
         inited = true;
     }
-    return langDef;
+    return milkdropLangDef;
 }
 
 const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::HLSL()
@@ -3379,31 +3385,31 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::SQL()
     if (!inited)
     {
         static const char* const keywords[] = {
-            "ADD", "EXCEPT", "PERCENT", "ALL", "EXEC", "PLAN", "ALTER", "EXECUTE", "PRECISION", "AND", "EXISTS", "PRIMARY", "ANY", "EXIT", "PRINT", "AS", "FETCH", "PROC", "ASC", "FILE", "PROCEDURE",
-            "AUTHORIZATION", "FILLFACTOR", "PUBLIC", "BACKUP", "FOR", "RAISERROR", "BEGIN", "FOREIGN", "READ", "BETWEEN", "FREETEXT", "READTEXT", "BREAK", "FREETEXTTABLE", "RECONFIGURE",
-            "BROWSE", "FROM", "REFERENCES", "BULK", "FULL", "REPLICATION", "BY", "FUNCTION", "RESTORE", "CASCADE", "GOTO", "RESTRICT", "CASE", "GRANT", "RETURN", "CHECK", "GROUP", "REVOKE",
-            "CHECKPOINT", "HAVING", "RIGHT", "CLOSE", "HOLDLOCK", "ROLLBACK", "CLUSTERED", "IDENTITY", "ROWCOUNT", "COALESCE", "IDENTITY_INSERT", "ROWGUIDCOL", "COLLATE", "IDENTITYCOL", "RULE",
-            "COLUMN", "IF", "SAVE", "COMMIT", "IN", "SCHEMA", "COMPUTE", "INDEX", "SELECT", "CONSTRAINT", "INNER", "SESSION_USER", "CONTAINS", "INSERT", "SET", "CONTAINSTABLE", "INTERSECT", "SETUSER",
-            "CONTINUE", "INTO", "SHUTDOWN", "CONVERT", "IS", "SOME", "CREATE", "JOIN", "STATISTICS", "CROSS", "KEY", "SYSTEM_USER", "CURRENT", "KILL", "TABLE", "CURRENT_DATE", "LEFT", "TEXTSIZE",
-            "CURRENT_TIME", "LIKE", "THEN", "CURRENT_TIMESTAMP", "LINENO", "TO", "CURRENT_USER", "LOAD", "TOP", "CURSOR", "NATIONAL", "TRAN", "DATABASE", "NOCHECK", "TRANSACTION",
-            "DBCC", "NONCLUSTERED", "TRIGGER", "DEALLOCATE", "NOT", "TRUNCATE", "DECLARE", "NULL", "TSEQUAL", "DEFAULT", "NULLIF", "UNION", "DELETE", "OF", "UNIQUE", "DENY", "OFF", "UPDATE",
-            "DESC", "OFFSETS", "UPDATETEXT", "DISK", "ON", "USE", "DISTINCT", "OPEN", "USER", "DISTRIBUTED", "OPENDATASOURCE", "VALUES", "DOUBLE", "OPENQUERY", "VARYING", "DROP", "OPENROWSET", "VIEW",
-            "DUMMY", "OPENXML", "WAITFOR", "DUMP", "OPTION", "WHEN", "ELSE", "OR", "WHERE", "END", "ORDER", "WHILE", "ERRLVL", "OUTER", "WITH", "ESCAPE", "OVER", "WRITETEXT"};
+            "add", "except", "percent", "all", "exec", "plan", "alter", "execute", "precision", "and", "exists", "primary", "any", "exit", "print", "as", "fetch", "proc", "asc", "file", "procedure",
+            "authorization", "fillfactor", "public", "backup", "for", "raiserror", "begin", "foreign", "read", "between", "freetext", "readtext", "break", "freetexttable", "reconfigure",
+            "browse", "from", "references", "bulk", "full", "replication", "by", "function", "restore", "cascade", "goto", "restrict", "case", "grant", "return", "check", "group", "revoke",
+            "checkpoint", "having", "right", "close", "holdlock", "rollback", "clustered", "identity", "rowcount", "coalesce", "identity_insert", "rowguidcol", "collate", "identitycol", "rule",
+            "column", "if", "save", "commit", "in", "schema", "compute", "index", "select", "constraint", "inner", "session_user", "contains", "insert", "set", "containstable", "intersect", "setuser",
+            "continue", "into", "shutdown", "convert", "is", "some", "create", "join", "statistics", "cross", "key", "system_user", "current", "kill", "table", "current_date", "left", "textsize",
+            "current_time", "like", "then", "current_timestamp", "lineno", "to", "current_user", "load", "top", "cursor", "national", "tran", "database", "nocheck", "transaction",
+            "dbcc", "nonclustered", "trigger", "deallocate", "not", "truncate", "declare", "null", "tsequal", "default", "nullif", "union", "delete", "of", "unique", "deny", "off", "update",
+            "desc", "offsets", "updatetext", "disk", "on", "use", "distinct", "open", "user", "distributed", "opendatasource", "values", "double", "openquery", "varying", "drop", "openrowset", "view",
+            "dummy", "openxml", "waitfor", "dump", "option", "when", "else", "or", "where", "end", "order", "while", "errlvl", "outer", "with", "escape", "over", "writetext"};
 
         for (auto& k : keywords)
             langDef.mKeywords.insert(k);
 
         static const char* const identifiers[] = {
-            "ABS", "ACOS", "ADD_MONTHS", "ASCII", "ASCIISTR", "ASIN", "ATAN", "ATAN2", "AVG", "BFILENAME", "BIN_TO_NUM", "BITAND", "CARDINALITY", "CASE", "CAST", "CEIL",
-            "CHARTOROWID", "CHR", "COALESCE", "COMPOSE", "CONCAT", "CONVERT", "CORR", "COS", "COSH", "COUNT", "COVAR_POP", "COVAR_SAMP", "CUME_DIST", "CURRENT_DATE",
-            "CURRENT_TIMESTAMP", "DBTIMEZONE", "DECODE", "DECOMPOSE", "DENSE_RANK", "DUMP", "EMPTY_BLOB", "EMPTY_CLOB", "EXP", "EXTRACT", "FIRST_VALUE", "FLOOR", "FROM_TZ", "GREATEST",
-            "GROUP_ID", "HEXTORAW", "INITCAP", "INSTR", "INSTR2", "INSTR4", "INSTRB", "INSTRC", "LAG", "LAST_DAY", "LAST_VALUE", "LEAD", "LEAST", "LENGTH", "LENGTH2", "LENGTH4",
-            "LENGTHB", "LENGTHC", "LISTAGG", "LN", "LNNVL", "LOCALTIMESTAMP", "LOG", "LOWER", "LPAD", "LTRIM", "MAX", "MEDIAN", "MIN", "MOD", "MONTHS_BETWEEN", "NANVL", "NCHR",
-            "NEW_TIME", "NEXT_DAY", "NTH_VALUE", "NULLIF", "NUMTODSINTERVAL", "NUMTOYMINTERVAL", "NVL", "NVL2", "POWER", "RANK", "RAWTOHEX", "REGEXP_COUNT", "REGEXP_INSTR",
-            "REGEXP_REPLACE", "REGEXP_SUBSTR", "REMAINDER", "REPLACE", "ROUND", "ROWNUM", "RPAD", "RTRIM", "SESSIONTIMEZONE", "SIGN", "SIN", "SINH",
-            "SOUNDEX", "SQRT", "STDDEV", "SUBSTR", "SUM", "SYS_CONTEXT", "SYSDATE", "SYSTIMESTAMP", "TAN", "TANH", "TO_CHAR", "TO_CLOB", "TO_DATE", "TO_DSINTERVAL", "TO_LOB",
-            "TO_MULTI_BYTE", "TO_NCLOB", "TO_NUMBER", "TO_SINGLE_BYTE", "TO_TIMESTAMP", "TO_TIMESTAMP_TZ", "TO_YMINTERVAL", "TRANSLATE", "TRIM", "TRUNC", "TZ_OFFSET", "UID", "UPPER",
-            "USER", "USERENV", "VAR_POP", "VAR_SAMP", "VARIANCE", "VSIZE "};
+            "abs", "acos", "add_months", "ascii", "asciistr", "asin", "atan", "atan2", "avg", "bfilename", "bin_to_num", "bitand", "cardinality", "case", "cast", "ceil",
+            "chartorowid", "chr", "coalesce", "compose", "concat", "convert", "corr", "cos", "cosh", "count", "covar_pop", "covar_samp", "cume_dist", "current_date",
+            "current_timestamp", "dbtimezone", "decode", "decompose", "dense_rank", "dump", "empty_blob", "empty_clob", "exp", "extract", "first_value", "floor", "from_tz", "greatest",
+            "group_id", "hextoraw", "initcap", "instr", "instr2", "instr4", "instrb", "instrc", "lag", "last_day", "last_value", "lead", "least", "length", "length2", "length4",
+            "lengthb", "lengthc", "listagg", "ln", "lnnvl", "localtimestamp", "log", "lower", "lpad", "ltrim", "max", "median", "min", "mod", "months_between", "nanvl", "nchr",
+            "new_time", "next_day", "nth_value", "nullif", "numtodsinterval", "numtoyminterval", "nvl", "nvl2", "power", "rank", "rawtohex", "regexp_count", "regexp_instr",
+            "regexp_replace", "regexp_substr", "remainder", "replace", "round", "rownum", "rpad", "rtrim", "sessiontimezone", "sign", "sin", "sinh",
+            "soundex", "sqrt", "stddev", "substr", "sum", "sys_context", "sysdate", "systimestamp", "tan", "tanh", "to_char", "to_clob", "to_date", "to_dsinterval", "to_lob",
+            "to_multi_byte", "to_nclob", "to_number", "to_single_byte", "to_timestamp", "to_timestamp_tz", "to_yminterval", "translate", "trim", "trunc", "tz_offset", "uid", "upper",
+            "user", "userenv", "var_pop", "var_samp", "variance", "vsize "};
         for (auto& k : identifiers)
         {
             Identifier id;

@@ -71,6 +71,8 @@ bool PresetEditorGUI::Draw()
         return false;
     }
 
+    HandleGlobalEditorKeys();
+
     _menu.Draw();
 
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -81,6 +83,10 @@ bool PresetEditorGUI::Draw()
     if (ImGui::Begin("Preset Editor", &_visible, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground))
     {
         DrawLeftSideBar();
+
+        ImGui::SameLine();
+
+        _codeEditorWindow.Draw();
     }
     ImGui::End();
 
@@ -110,6 +116,32 @@ void PresetEditorGUI::UpdatePresetPreview()
     }
 }
 
+void PresetEditorGUI::HandleGlobalEditorKeys()
+{
+    ImGuiIO& io = ImGui::GetIO();
+    auto shift = io.KeyShift;
+    auto ctrl = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
+    auto alt = io.ConfigMacOSXBehaviors ? io.KeyCtrl : io.KeyAlt;
+
+    // Reload edited preset - Alt+Enter or F5
+    if ((io.KeysData[ImGuiKey_Enter - ImGuiKey_NamedKey_BEGIN].Down && alt) || io.KeysData[ImGuiKey_F5 - ImGuiKey_NamedKey_BEGIN].Down)
+    {
+        UpdatePresetPreview();
+    }
+
+    // Save preset - Ctrl+S
+    if (io.KeysData[ImGuiKey_S - ImGuiKey_NamedKey_BEGIN].Down && ctrl)
+    {
+
+    }
+
+    // New preset - Ctrl+N
+    if (io.KeysData[ImGuiKey_N - ImGuiKey_NamedKey_BEGIN].Down && ctrl)
+    {
+        Show("");
+    }
+}
+
 void PresetEditorGUI::TakeProjectMControl()
 {
     // Detach playlist, seize control over projectM
@@ -132,8 +164,7 @@ void PresetEditorGUI::ReleaseProjectMControl()
 
 void PresetEditorGUI::EditCode(ExpressionCodeTypes type, std::string& code, int index)
 {
-    _textEditor.SetLanguageDefinition(CodeContextInformation::GetLanguageDefinition(type));
-    _textEditor.SetText(code);
+    _codeEditorWindow.OpenCodeInTab(type, code, index);
 }
 
 unsigned long PresetEditorGUI::GetLoC(const std::string& code)
@@ -187,18 +218,6 @@ void PresetEditorGUI::DrawLeftSideBar()
     DrawShaderCodeSettings();
 
     ImGui::EndChild();
-
-    ImGui::SameLine();
-
-    ImGui::SetNextWindowBgAlpha(0.5f);
-    ImGui::BeginChild("CodeEditor", ImVec2(0, 500), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY, window_flags);
-
-    ImGui::PushID("CodeEditor");
-    _textEditor.Render("Code Editor");
-    ImGui::PopID();
-
-    ImGui::EndChild();
-
 
     ImGui::PopStyleVar();
 }

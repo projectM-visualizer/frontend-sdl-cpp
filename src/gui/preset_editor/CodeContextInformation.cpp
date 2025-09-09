@@ -926,8 +926,13 @@ const TextEditor::LanguageDefinition& CodeContextInformation::GetLanguageDefinit
 
 TextEditor::LanguageDefinition CodeContextInformation::PopulateLanguageDefinitionForType(ExpressionCodeTypes type)
 {
-
     auto definition = TextEditor::LanguageDefinition::MilkdropExpression();
+
+    if (type == ExpressionCodeTypes::WarpShader || type == ExpressionCodeTypes::CompositeShader)
+    {
+        definition = TextEditor::LanguageDefinition::HLSL();
+    }
+
     for (const auto& sourceIdentifier : GetIdentifierList(type))
     {
         TextEditor::Identifier id;
