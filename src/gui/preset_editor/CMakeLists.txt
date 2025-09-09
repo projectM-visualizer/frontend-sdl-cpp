@@ -20,6 +20,7 @@ add_library(PresetEditor STATIC
 
 target_link_libraries(PresetEditor
         PUBLIC
+        projectM::Eval
         ImGUIColorTextEditor
         ImGui
         Poco::Util

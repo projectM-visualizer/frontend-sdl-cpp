@@ -1,10 +1,10 @@
 #pragma once
 
-#include "EditorPreset.h"
-#include "PresetFile.h"
-#include "TextEditor.h"
+#include "CodeEditorWindow.h"
 #include "EditorMenu.h"
+#include "EditorPreset.h"
 #include "ExpressionCodeTypes.h"
+#include "PresetFile.h"
 
 #include <string>
 
@@ -45,6 +45,7 @@ public:
     void UpdatePresetPreview();
 
 private:
+    void HandleGlobalEditorKeys();
     void TakeProjectMControl();
     void ReleaseProjectMControl();
 
@@ -83,7 +84,8 @@ private:
     PresetFile _presetFile; //!< The raw preset data.
     EditorPreset _editorPreset; //!< The preset data in a parsed, strongly-typed container.
 
-    TextEditor _textEditor; //!< The expression/shader code editor.
+    CodeEditorWindow _codeEditorWindow; //!< The code editor window.
+
 };
 
 } // namespace Editor
