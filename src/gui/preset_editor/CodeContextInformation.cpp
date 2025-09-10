@@ -642,6 +642,17 @@ std::vector<std::pair<const char*, const char*>> CodeContextInformation::GetIden
 
         {ExpressionCodeTypes::WarpShader, {{"shader_body", ICON_FA_PAPER_PLANE " Shader entry point.\nWill be replaced with the appropriate function declaration at runtime."}, //
                                            {"ret", ICON_FA_CUBE " float3\n" ICON_FA_RIGHT_FROM_BRACKET " Shader output RGB color."}, //
+                                           {"M_PI", ICON_FA_CUBE " float\nPi constant (3.14159265359)"}, //
+                                           {"M_PI_2", ICON_FA_CUBE " float\n2*Pi constant (6.28318530718)"}, //
+                                           {"M_INV_PI_2", ICON_FA_CUBE " float\n1/Pi constant (0.159154943091895)"}, //
+                                           {"GetMain", ICON_FA_CUBES " float3 GetMain(float2 uv)\nSample main texture at uv, equivalent to:\ntex2D(sampler_main, uv).xyz"}, //
+                                           {"GetPixel", ICON_FA_CUBES " float3 GetMain(float2 uv)\nSample main texture at uv, equivalent to:\ntex2D(sampler_main, uv).xyz"}, //
+                                           {"GetBlur1", ICON_FA_CUBES " float3 GetBlur1(float2 uv)\nSample blur1 texture at uv with range bias applied, equivalent to:\ntex2D(sampler_blur1, uv).xyz * blur1_min + blur1_max"}, //
+                                           {"GetBlur2", ICON_FA_CUBES " float3 GetBlur2(float2 uv)\nSample blur2 texture at uv with range bias applied, equivalent to:\ntex2D(sampler_blur2, uv).xyz * blur2_min + blur2_max"}, //
+                                           {"GetBlur3", ICON_FA_CUBES " float3 GetBlur3(float2 uv)\nSample blur3 texture at uv with range bias applied, equivalent to:\ntex2D(sampler_blur3, uv).xyz * blur3_min + blur3_max"}, //
+                                           {"lum", ICON_FA_CUBES " float lum(float3 color)\nCalculates the luminosity of the given color equivalent to:\ndot(color, float3(0.32, 0.49, 0.29)"}, //
+                                           {"tex2d", ICON_FA_CUBE " float4\nLower-case alias for tex2D"}, //
+                                           {"tex3d", ICON_FA_CUBE " float4\nLower-case alias for tex3D"}, //
                                            {"uv", ICON_FA_CUBE " float2\nWarped UV coordinates (approx. 0..1)."}, //
                                            {"uv_orig", ICON_FA_CUBE " float2\nOriginal, unwarped UV coordinates (0..1)."}, //
                                            {"rad", ICON_FA_CUBE " float\nRadius of the current pixel from center of screen (0..1)."}, //
@@ -774,6 +785,17 @@ std::vector<std::pair<const char*, const char*>> CodeContextInformation::GetIden
 
         {ExpressionCodeTypes::CompositeShader, {{"shader_body", ICON_FA_PAPER_PLANE " Shader entry point.\nWill be replaced with the appropriate function declaration at runtime."}, //
                                                 {"ret", ICON_FA_CUBE " float3\n" ICON_FA_RIGHT_FROM_BRACKET " Shader output RGB color."}, //
+                                                {"M_PI", ICON_FA_CUBE " float\nPi constant (3.14159265359)"}, //
+                                                {"M_PI_2", ICON_FA_CUBE " float\n2*Pi constant (6.28318530718)"}, //
+                                                {"M_INV_PI_2", ICON_FA_CUBE " float\n1/Pi constant (0.159154943091895)"}, //
+                                                {"GetMain", ICON_FA_CUBES " float3 GetMain(float2 uv)\nSample main texture at uv, equivalent to:\ntex2D(sampler_main, uv).xyz"}, //
+                                                {"GetPixel", ICON_FA_CUBES " float3 GetMain(float2 uv)\nSample main texture at uv, equivalent to:\ntex2D(sampler_main, uv).xyz"}, //
+                                                {"GetBlur1", ICON_FA_CUBES " float3 GetBlur1(float2 uv)\nSample blur1 texture at uv with range bias applied, equivalent to:\ntex2D(sampler_blur1, uv).xyz * blur1_min + blur1_max"}, //
+                                                {"GetBlur2", ICON_FA_CUBES " float3 GetBlur2(float2 uv)\nSample blur2 texture at uv with range bias applied, equivalent to:\ntex2D(sampler_blur2, uv).xyz * blur2_min + blur2_max"}, //
+                                                {"GetBlur3", ICON_FA_CUBES " float3 GetBlur3(float2 uv)\nSample blur3 texture at uv with range bias applied, equivalent to:\ntex2D(sampler_blur3, uv).xyz * blur3_min + blur3_max"}, //
+                                                {"lum", ICON_FA_CUBES " float lum(float3 color)\nCalculates the luminosity of the given color equivalent to:\ndot(color, float3(0.32, 0.49, 0.29)"}, //
+                                                {"tex2d", ICON_FA_CUBE " float4\nLower-case alias for tex2D"}, //
+                                                {"tex3d", ICON_FA_CUBE " float4\nLower-case alias for tex3D"}, //
                                                 {"uv", ICON_FA_CUBE " float2\nUnwarped UV coordinates (0..1)."}, //
                                                 {"hue_shader", ICON_FA_CUBE " float3\nA color that varies across the screen (the old 'hue shader' effect from MilkDrop 1)."}, //
                                                 {"rad", ICON_FA_CUBE " float\nRadius of the current pixel from center of screen (0..1)."}, //
