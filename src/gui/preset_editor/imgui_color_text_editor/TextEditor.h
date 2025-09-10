@@ -307,6 +307,12 @@ public:
         return mTabSize;
     }
 
+    void SetTabsAsSpaces(bool aValue);
+    inline bool GetTabsAsSpaces() const
+    {
+        return mTabsAsSpaces;
+    }
+
     void InsertText(const std::string& aValue);
     void InsertText(const char* aValue);
 
@@ -411,6 +417,8 @@ private:
     int GetLineCharacterCount(int aLine) const;
     int GetLineMaxColumn(int aLine) const;
     bool IsOnWordBoundary(const Coordinates& aAt) const;
+    void IndentSelection(bool aIndent);
+    int IndentLine(int aIndex, bool aIndent, const std::string& aIndentChars, UndoRecord& aUndoRecord);
     void RemoveLine(int aStart, int aEnd);
     void RemoveLine(int aIndex);
     Line& InsertLine(int aIndex);
@@ -432,6 +440,7 @@ private:
     int mUndoIndex{0};
 
     int mTabSize{4};
+    bool mTabsAsSpaces{false};
     bool mOverwrite{false};
     bool mReadOnly{false};
     bool mWithinRender{false};

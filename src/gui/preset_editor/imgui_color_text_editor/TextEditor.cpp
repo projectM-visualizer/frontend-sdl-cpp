@@ -552,6 +552,208 @@ bool TextEditor::IsOnWordBoundary(const Coordinates& aAt) const
     return isspace(line[cindex].mChar) != isspace(line[cindex - 1].mChar);
 }
 
+void TextEditor::IndentSelection(bool aIndent)
+{
+    std::string tabString = mTabsAsSpaces ? std::string(mTabSize, ' ') : "\t";
+
+    UndoRecord u;
+
+    u.mBefore = mState;
+
+    auto start = mState.mSelectionStart;
+    auto end = mState.mSelectionEnd;
+
+    if (start.mLine == end.mLine)
+    {
+        // Just tab without selection inserts tab/spaces at cursor position
+        if (aIndent && mState.mSelectionStart.mColumn == end.mColumn)
+        {
+            u.mAdded = tabString;
+            u.mAddedStart = start;
+            u.mAddedEnd = Coordinates(start.mLine, start.mColumn + tabString.size());
+
+            InsertText(tabString);
+        }
+        else
+        {
+            // Otherwise, (un)indent the whole line
+            IndentLine(start.mLine, aIndent, tabString, u);
+        }
+    }
+    else
+    {
+        // Multiple lines - indent or unindent each (if possible)
+        // Selection start/end columns are ignored, each "touched" line counts
+
+        // Undo the change of the whole text block
+        auto undoStart = Coordinates(start.mLine, 0);
+        auto undoEnd = Coordinates(end.mLine, GetLineCharacterCount(end.mLine));
+
+        u.mRemoved = GetText(undoStart, undoEnd);
+        u.mRemovedStart = undoStart;
+        u.mRemovedEnd = undoEnd;
+
+        UndoRecord dummyUndo;
+        for (int line = start.mLine; line <= end.mLine; line++)
+        {
+            // If the last line is only selected at the beginning, ignore it.
+            if (line != end.mLine || end.mColumn > 0)
+            {
+                IndentLine(line, aIndent, tabString, dummyUndo);
+            }
+        }
+
+        undoStart = Coordinates(mState.mSelectionStart.mLine, 0);
+        undoEnd = Coordinates(mState.mSelectionEnd.mLine, GetLineCharacterCount(mState.mSelectionEnd.mLine));
+
+        u.mAdded = GetText(undoStart, undoEnd);
+        u.mAddedStart = undoStart;
+        u.mAddedEnd = undoEnd;
+    }
+
+    u.mAfter = mState;
+
+    AddUndo(u);
+}
+
+int TextEditor::IndentLine(int aIndex, bool aIndent, const std::string& aIndentChars, UndoRecord& aUndoRecord)
+{
+    Coordinates lineStart(aIndex, 0);
+    Coordinates lineEnd(aIndex, GetLineMaxColumn(aIndex));
+    auto text = GetText(lineStart, lineEnd);
+
+    if (!aIndent && text.empty())
+    {
+        return 0;
+    }
+
+    auto selectionStart = mState.mSelectionStart;
+    auto selectionEnd = mState.mSelectionEnd;
+
+    int lastWhitespace = 0;
+    int totalIndentation = 0;
+    while (lastWhitespace < text.size() && (text.at(lastWhitespace) == ' ' || text.at(lastWhitespace) == '\t'))
+    {
+        totalIndentation += text.at(lastWhitespace) == ' ' ? 1 : mTabSize;
+        lastWhitespace++;
+    }
+
+    if (aIndent)
+    {
+        Coordinates insertCoordinates(aIndex, lastWhitespace);
+
+        InsertTextAt(insertCoordinates, aIndentChars.c_str());
+
+        if (selectionStart.mLine == aIndex && selectionStart.mColumn >= lastWhitespace - 1)
+        {
+            selectionStart.mColumn += aIndentChars.size();
+        }
+        if (selectionEnd.mLine == aIndex && selectionEnd.mColumn >= lastWhitespace - 1)
+        {
+            selectionEnd.mColumn += aIndentChars.size();
+        }
+        SetSelection(selectionStart, selectionEnd);
+        auto pos = GetCursorPosition();
+        if (pos.mLine == aIndex && pos.mColumn >= lastWhitespace)
+        {
+            pos.mColumn += aIndentChars.size();
+            SetCursorPosition(pos);
+        }
+
+        aUndoRecord.mAdded = aIndentChars;
+        aUndoRecord.mAddedStart = insertCoordinates;
+        aUndoRecord.mAddedEnd = Coordinates(insertCoordinates.mLine, insertCoordinates.mColumn + aIndentChars.size());
+
+        return aIndentChars.size();
+    }
+
+    // Easy case: Up to one tab stop - just remove all indentation.
+    if (totalIndentation <= mTabSize)
+    {
+        Coordinates removeEnd(aIndex, lastWhitespace);
+
+        aUndoRecord.mRemoved = GetText(lineStart, removeEnd);
+        aUndoRecord.mRemovedStart = lineStart;
+        aUndoRecord.mRemovedEnd = removeEnd;
+
+        auto pos = GetCursorPosition();
+
+        DeleteRange(lineStart, removeEnd);
+
+        if (selectionStart.mLine == aIndex && selectionStart.mColumn >= removeEnd.mColumn)
+        {
+            selectionStart.mColumn -= lastWhitespace;
+        }
+        if (selectionEnd.mLine == aIndex && selectionEnd.mColumn >= removeEnd.mColumn)
+        {
+            selectionEnd.mColumn -= lastWhitespace;
+        }
+        SetSelection(selectionStart, selectionEnd);
+        if (pos.mLine == aIndex && pos.mColumn >= removeEnd.mColumn)
+        {
+            pos.mColumn -= lastWhitespace;
+            SetCursorPosition(pos);
+        }
+        else if (pos.mLine == aIndex && pos.mColumn < lastWhitespace - 1)
+        {
+            pos.mColumn = 0;
+            SetCursorPosition(pos);
+        }
+
+        return -lastWhitespace;
+    }
+
+    // Read backwards, gather as many tabs/spaces as needed.
+    int removeIndentation = 0;
+    int removeStartPos = lastWhitespace;
+    for (; removeStartPos > 0 && removeIndentation < mTabSize; removeStartPos--)
+    {
+        removeIndentation += text.at(removeStartPos - 1) == ' ' ? 1 : mTabSize;
+    }
+
+    Coordinates removeStartCoords(aIndex, removeStartPos);
+    Coordinates removeEndCoords(aIndex, lastWhitespace);
+
+    aUndoRecord.mRemoved = GetText(removeStartCoords, removeEndCoords);
+    aUndoRecord.mRemovedStart = removeStartCoords;
+    aUndoRecord.mRemovedEnd = removeEndCoords;
+
+    DeleteRange(removeStartCoords, Coordinates(aIndex, lastWhitespace));
+
+    int indentChars = removeStartPos - lastWhitespace;
+
+    // Insert spaces if removed size was larger than necessary (e.g. mixed spaces and tabs)
+    if (removeIndentation > mTabSize)
+    {
+        std::string fillString(removeIndentation - mTabSize, ' ');
+        InsertTextAt(removeStartCoords, fillString.c_str());
+
+        aUndoRecord.mAdded = fillString;
+        aUndoRecord.mAddedStart = removeStartCoords;
+        aUndoRecord.mAddedEnd = Coordinates(removeStartCoords.mLine, removeStartCoords.mColumn + fillString.size());
+
+        indentChars += fillString.size();
+    }
+
+    if (selectionStart.mLine == aIndex && selectionStart.mColumn >= lastWhitespace)
+    {
+        selectionStart.mColumn += indentChars;
+    }
+    if (selectionEnd.mLine == aIndex && selectionEnd.mColumn >= lastWhitespace)
+    {
+        selectionEnd.mColumn += indentChars;
+    }
+    SetSelection(selectionStart, selectionEnd);
+    auto pos = GetCursorPosition();
+    if (pos.mLine == aIndex && pos.mColumn >= lastWhitespace)
+    {
+        pos.mColumn += indentChars;
+        SetCursorPosition(pos);
+    }
+
+    return indentChars;
+}
+
 void TextEditor::RemoveLine(int aStart, int aEnd)
 {
     assert(!mReadOnly);
@@ -740,7 +942,7 @@ void TextEditor::HandleKeyboardInputs()
         else if (!IsReadOnly() && !ctrl && !shift && !alt && ImGui::IsKeyPressed(ImGuiKey_Enter))
             EnterCharacter('\n', false);
         else if (!IsReadOnly() && !ctrl && !alt && ImGui::IsKeyPressed(ImGuiKey_Tab))
-            EnterCharacter('\t', shift);
+            IndentSelection(!shift);
 
         if (!IsReadOnly() && !io.InputQueueCharacters.empty())
         {
@@ -1440,6 +1642,11 @@ void TextEditor::SetSelection(const Coordinates& aStart, const Coordinates& aEnd
 void TextEditor::SetTabSize(int aValue)
 {
     mTabSize = std::max(0, std::min(32, aValue));
+}
+
+void TextEditor::SetTabsAsSpaces(bool aValue)
+{
+    mTabsAsSpaces = aValue;
 }
 
 void TextEditor::InsertText(const std::string& aValue)
