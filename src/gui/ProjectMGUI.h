@@ -1,12 +1,5 @@
 #pragma once
 
-#include "AboutWindow.h"
-#include "HelpWindow.h"
-#include "MainMenu.h"
-#include "PresetEditorGUI.h"
-#include "SettingsWindow.h"
-#include "ToastMessage.h"
-
 #include "notifications/DisplayToastNotification.h"
 
 #include <SDL2/SDL.h>
@@ -16,13 +9,28 @@
 
 #include <Poco/Util/Subsystem.h>
 
+#include <memory>
+
+namespace Editor {
+class PresetEditorGUI;
+}
+
 struct ImFont;
 class ProjectMWrapper;
 class SDLRenderingWindow;
+class MainMenu;
+class SettingsWindow;
+class AboutWindow;
+class HelpWindow;
+class ToastMessage;
 
 class ProjectMGUI : public Poco::Util::Subsystem
 {
 public:
+    ProjectMGUI();
+
+    ~ProjectMGUI() override;
+
     const char* name() const override;
 
     void initialize(Poco::Util::Application& app) override;
@@ -146,11 +154,11 @@ private:
     float _userScalingFactor{1.0f}; //!< The user-defined UI scaling factor.
     float _textScalingFactor{0.0f}; //!< The text scaling factor.
 
-    MainMenu _mainMenu{*this};
-    Editor::PresetEditorGUI _presetEditorGUI{*this}; //!< The preset editor GUI.
-    SettingsWindow _settingsWindow{*this}; //!< The settings window.
-    AboutWindow _aboutWindow{*this}; //!< The about window.
-    HelpWindow _helpWindow; //!< Help window with shortcuts and tips.
+    std::unique_ptr<MainMenu> _mainMenu;
+    std::unique_ptr<Editor::PresetEditorGUI> _presetEditorGUI; //!< The preset editor GUI.
+    std::unique_ptr<SettingsWindow> _settingsWindow; //!< The settings window.
+    std::unique_ptr<AboutWindow> _aboutWindow; //!< The about window.
+    std::unique_ptr<HelpWindow> _helpWindow; //!< Help window with shortcuts and tips.
 
     std::unique_ptr<ToastMessage> _toast; //!< Current toast to be displayed.
 
