@@ -3,10 +3,16 @@
 #include "ProjectMWrapper.h"
 #include "SDLRenderingWindow.h"
 
+#include "AboutWindow.h"
 #include "AnonymousProFont.h"
 #include "FontAwesomeIconsRegular7.h"
 #include "FontAwesomeIconsSolid7.h"
+#include "HelpWindow.h"
 #include "LiberationSansFont.h"
+#include "MainMenu.h"
+#include "PresetEditorGUI.h"
+#include "SettingsWindow.h"
+#include "ToastMessage.h"
 
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -17,6 +23,17 @@
 #include <Poco/Util/Application.h>
 
 #include <utility>
+
+ProjectMGUI::ProjectMGUI()
+    : _mainMenu(std::make_unique<MainMenu>(*this))
+    , _presetEditorGUI(std::make_unique<Editor::PresetEditorGUI>(*this))
+    , _settingsWindow(std::make_unique<SettingsWindow>(*this))
+    , _aboutWindow(std::make_unique<AboutWindow>(*this))
+    , _helpWindow(std::make_unique<HelpWindow>())
+{
+}
+
+ProjectMGUI::~ProjectMGUI() = default;
 
 const char* ProjectMGUI::name() const
 {
@@ -171,12 +188,12 @@ void ProjectMGUI::Draw()
 
     if (_visible)
     {
-        if (!_presetEditorGUI.Draw())
+        if (!_presetEditorGUI->Draw())
         {
-            _mainMenu.Draw();
-            _settingsWindow.Draw();
-            _aboutWindow.Draw();
-            _helpWindow.Draw();
+            _mainMenu->Draw();
+            _settingsWindow->Draw();
+            _aboutWindow->Draw();
+            _helpWindow->Draw();
         }
     }
 
@@ -223,22 +240,22 @@ void ProjectMGUI::PopFont()
 
 void ProjectMGUI::ShowPresetEditor(const std::string& presetFileName)
 {
-    _presetEditorGUI.Show(presetFileName);
+    _presetEditorGUI->Show(presetFileName);
 }
 
 void ProjectMGUI::ShowSettingsWindow()
 {
-    _settingsWindow.Show();
+    _settingsWindow->Show();
 }
 
 void ProjectMGUI::ShowAboutWindow()
 {
-    _aboutWindow.Show();
+    _aboutWindow->Show();
 }
 
 void ProjectMGUI::ShowHelpWindow()
 {
-    _helpWindow.Show();
+    _helpWindow->Show();
 }
 
 float ProjectMGUI::GetScalingFactor()

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "CodeEditorWindow.h"
 #include "EditorMenu.h"
 #include "EditorPreset.h"
 #include "ExpressionCodeTypes.h"
 #include "PresetFile.h"
 
+#include <memory>
 #include <string>
 
 class ProjectMGUI;
@@ -14,12 +14,14 @@ class ProjectMWrapper;
 
 namespace Editor {
 
+class CodeEditorWindow;
+
 class PresetEditorGUI
 {
 public:
     explicit PresetEditorGUI(ProjectMGUI& gui);
 
-    ~PresetEditorGUI() = default;
+    ~PresetEditorGUI();
 
     /**
      * @brief Displays the preset editor screen and associated windows.
@@ -84,7 +86,7 @@ private:
     PresetFile _presetFile; //!< The raw preset data.
     EditorPreset _editorPreset; //!< The preset data in a parsed, strongly-typed container.
 
-    CodeEditorWindow _codeEditorWindow; //!< The code editor window.
+    std::unique_ptr<CodeEditorWindow> _codeEditorWindow; //!< The code editor window.
 
 };
 
