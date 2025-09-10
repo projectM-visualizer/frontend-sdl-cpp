@@ -4,6 +4,7 @@
 
 #include "gui/ProjectMGUI.h"
 
+#include <Poco/File.h>
 #include <Poco/NotificationCenter.h>
 
 #include <Poco/Util/Application.h>
