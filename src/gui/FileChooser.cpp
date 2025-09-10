@@ -1,5 +1,7 @@
 #include "FileChooser.h"
 
+#include "IconsFontAwesome7.h"
+
 #include "imgui.h"
 
 #include <Poco/SortedDirectoryIterator.h>
@@ -143,7 +145,7 @@ bool FileChooser::Draw()
         }
 
         ImGui::PushStyleColor(ImGuiCol_Button, 0xFF000080);
-        if (ImGui::Button("Cancel"))
+        if (ImGui::Button(ICON_FA_BAN " Cancel"))
         {
             _selectedFiles.clear();
             fileSelected = true;
@@ -151,7 +153,7 @@ bool FileChooser::Draw()
         }
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        if (ImGui::Button("Select"))
+        if (ImGui::Button(ICON_FA_CHECK " Select"))
         {
             for (auto index : _selectedFileIndices)
             {
@@ -194,7 +196,7 @@ void FileChooser::DrawNavButtons()
     std::vector<std::string> roots;
     Poco::Path::listRoots(roots);
 
-    if (ImGui::Button("Up"))
+    if (ImGui::Button(ICON_FA_CARET_UP " Up"))
     {
         ChangeDirectory(_currentDir.parent());
         poco_debug_f1(_logger, "Going one dir up: %s", _currentDir.toString());
@@ -202,7 +204,7 @@ void FileChooser::DrawNavButtons()
 
     ImGui::SameLine();
 
-    if (ImGui::Button("Home"))
+    if (ImGui::Button(ICON_FA_HOUSE " Home"))
     {
         ChangeDirectory(Poco::Path::home());
         poco_debug_f1(_logger, "Going to user's home dir: %s", _currentDir.toString());

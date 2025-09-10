@@ -70,7 +70,7 @@ void MainMenu::DrawFileMenu()
             }
             if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Select Preset From Disk...", "Ctrl+l"))
             {
-                _presetChooser.Title("Select a Preset for Editing");
+                _presetChooser.Title(ICON_FA_FILE_IMPORT " Select a Preset for Editing");
                 _presetChooser.Show();
             }
             if (ImGui::MenuItem(ICON_FA_SQUARE_PLUS " Create New Preset", "Ctrl+Shift+n"))
@@ -194,14 +194,14 @@ void MainMenu::DrawHelpMenu()
 {
     if (ImGui::BeginMenu("Help"))
     {
-        if (ImGui::MenuItem("Quick Help..."))
+        if (ImGui::MenuItem(ICON_FA_CIRCLE_QUESTION " Quick Help..."))
         {
             _gui.ShowHelpWindow();
         }
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem("About projectM..."))
+        if (ImGui::MenuItem(ICON_FA_INFO " About projectM..."))
         {
             _gui.ShowAboutWindow();
         }
