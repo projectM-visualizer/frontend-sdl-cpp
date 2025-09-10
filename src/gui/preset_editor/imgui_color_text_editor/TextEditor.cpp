@@ -2484,14 +2484,14 @@ void TextEditor::UndoRecord::Redo(TextEditor* aEditor)
     if (!mRemoved.empty())
     {
         aEditor->DeleteRange(mRemovedStart, mRemovedEnd);
-        aEditor->Colorize(mRemovedStart.mLine - 1, mRemovedEnd.mLine - mRemovedStart.mLine + 1);
+        aEditor->Colorize(mRemovedStart.mLine - 1, mRemovedEnd.mLine - mRemovedStart.mLine + 2);
     }
 
     if (!mAdded.empty())
     {
         auto start = mAddedStart;
         aEditor->InsertTextAt(start, mAdded.c_str());
-        aEditor->Colorize(mAddedStart.mLine - 1, mAddedEnd.mLine - mAddedStart.mLine + 1);
+        aEditor->Colorize(mAddedStart.mLine - 1, mAddedEnd.mLine - mAddedStart.mLine + 2);
     }
 
     aEditor->mState = mAfter;
