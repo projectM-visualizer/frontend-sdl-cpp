@@ -1,5 +1,6 @@
 #include "AboutWindow.h"
 
+#include "IconsFontAwesome7.h"
 #include "ProjectMGUI.h"
 #include "SystemBrowser.h"
 
@@ -30,7 +31,7 @@ void AboutWindow::Draw()
     }
 
     ImGui::SetNextWindowSize(ImVec2(750, 600), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("About the projectM SDL Frontend###About", &_visible, ImGuiWindowFlags_NoCollapse))
+    if (ImGui::Begin(ICON_FA_INFO " About the projectM SDL Frontend###About", &_visible, ImGuiWindowFlags_NoCollapse))
     {
         _gui.PushToastFont();
         ImGui::TextUnformatted("projectM SDL Frontend");
@@ -46,9 +47,9 @@ void AboutWindow::Draw()
         ImGui::TextWrapped("The projectM SDL frontend is open-source software licensed under the GNU General Public License, version 3.");
         ImGui::Dummy({.0f, 10.0f});
         ImGui::TextWrapped("Get the source code on GitHub or report an issue with the SDL frontend:");
-        if (ImGui::SmallButton("https://github.com/projectM-visualizer/frontend-sdl2"))
+        if (ImGui::SmallButton(ICON_FA_ARROW_UP_RIGHT_FROM_SQUARE " https://github.com/projectM-visualizer/frontend-sdl-cpp"))
         {
-            SystemBrowser::OpenURL("https://github.com/projectM-visualizer/frontend-sdl2");
+            SystemBrowser::OpenURL("https://github.com/projectM-visualizer/frontend-sdl-cpp");
         }
         ImGui::Dummy({.0f, 10.0f});
         if (ImGui::CollapsingHeader("Open-Source Software Used in this Application"))

@@ -4,6 +4,7 @@
 #include "ProjectMSDLApplication.h"
 #include "SDLRenderingWindow.h"
 
+#include "IconsFontAwesome7.h"
 #include "ProjectMGUI.h"
 
 #include "notifications/DisplayToastNotification.h"
@@ -38,7 +39,7 @@ void SettingsWindow::Draw()
     constexpr ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse;
     constexpr ImGuiTabBarFlags tabBarFlags = ImGuiTabBarFlags_None;
 
-    std::string windowId = "Settings";
+    std::string windowId = ICON_FA_GEAR " Settings";
     if (_changed)
     {
         windowId.append(" [CHANGED - NOT SAVED]");
@@ -84,7 +85,7 @@ void SettingsWindow::DrawProjectMSettingsTab()
             ImGui::TableSetupColumn("##desc", ImGuiTableColumnFlags_WidthFixed, .0f);
             ImGui::TableSetupColumn("##setting", ImGuiTableColumnFlags_WidthStretch, .0f);
             ImGui::TableSetupColumn("##choose", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-            ImGui::TableSetupColumn("##reset", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+            ImGui::TableSetupColumn("##reset", ImGuiTableColumnFlags_WidthFixed, 100.0f);
             ImGui::TableSetupColumn("##override", ImGuiTableColumnFlags_WidthFixed, .0f);
 
             ImGui::TableNextRow();
@@ -168,7 +169,7 @@ void SettingsWindow::DrawWindowSettingsTab()
             ImGui::TableSetupColumn("##desc", ImGuiTableColumnFlags_WidthFixed, .0f);
             ImGui::TableSetupColumn("##setting", ImGuiTableColumnFlags_WidthStretch, .0f);
             ImGui::TableSetupColumn("##choose", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-            ImGui::TableSetupColumn("##reset", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+            ImGui::TableSetupColumn("##reset", ImGuiTableColumnFlags_WidthFixed, 100.0f);
             ImGui::TableSetupColumn("##override", ImGuiTableColumnFlags_WidthFixed, .0f);
 
             ImGui::TableNextRow();
@@ -270,7 +271,7 @@ void SettingsWindow::DrawAudioSettingsTab()
         {
             ImGui::TableSetupColumn("##desc", ImGuiTableColumnFlags_WidthFixed, .0f);
             ImGui::TableSetupColumn("##setting", ImGuiTableColumnFlags_WidthStretch, .0f);
-            ImGui::TableSetupColumn("##choose", ImGuiTableColumnFlags_WidthFixed, 50.0f);
+            ImGui::TableSetupColumn("##choose", ImGuiTableColumnFlags_WidthFixed, 100.0f);
             ImGui::TableSetupColumn("##reset", ImGuiTableColumnFlags_WidthFixed, 100.0f);
             ImGui::TableSetupColumn("##override", ImGuiTableColumnFlags_WidthFixed, .0f);
 
@@ -322,7 +323,7 @@ void SettingsWindow::DrawHelpTab() const
 
 void SettingsWindow::SaveButton()
 {
-    if (ImGui::Button("Save Settings"))
+    if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save Settings"))
     {
         try
         {
@@ -384,7 +385,7 @@ void SettingsWindow::PathSetting(const std::string& property)
     if (ImGui::Button("..."))
     {
         _pathChooser.CurrentDirectory(path);
-        _pathChooser.Title("Select directory");
+        _pathChooser.Title(ICON_FA_FOLDER_OPEN " Select directory");
         _pathChooser.Context(property);
         _pathChooser.Show();
     }
@@ -605,7 +606,7 @@ bool SettingsWindow::ResetButton(const std::string& property1, const std::string
     bool pressed{false};
 
     ImGui::PushID(std::string(property1 + property2 + "_ResetButton").c_str());
-    if (ImGui::Button("Reset"))
+    if (ImGui::Button(ICON_FA_ERASER " Reset"))
     {
         _userConfiguration->remove(property1);
         if (!property2.empty())
