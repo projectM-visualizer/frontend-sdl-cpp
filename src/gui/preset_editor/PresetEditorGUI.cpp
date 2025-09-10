@@ -85,7 +85,7 @@ bool PresetEditorGUI::Draw()
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::PushStyleColor(ImGuiCol_TitleBgActive, IM_COL32(0xd9, 0x1e, 0x18, 0xff));
 
-    if (ImGui::Begin("Preset Editor", &_visible, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground))
+    if (ImGui::Begin("Preset Editor", &_visible, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground))
     {
         DrawLeftSideBar();
 
@@ -109,7 +109,7 @@ bool PresetEditorGUI::Draw()
         _codeEditorWindow.reset();
     }
 
-    return true;
+    return _visible;
 }
 
 void PresetEditorGUI::UpdatePresetPreview()
@@ -131,19 +131,19 @@ void PresetEditorGUI::HandleGlobalEditorKeys()
     auto alt = io.ConfigMacOSXBehaviors ? io.KeyCtrl : io.KeyAlt;
 
     // Reload edited preset - Alt+Enter or F5
-    if ((io.KeysData[ImGuiKey_Enter - ImGuiKey_NamedKey_BEGIN].Down && alt) || io.KeysData[ImGuiKey_F5 - ImGuiKey_NamedKey_BEGIN].Down)
+    if (ImGui::IsKeyPressed(ImGuiKey_F5, false) || alt && ImGui::IsKeyPressed(ImGuiKey_Enter, false))
     {
         UpdatePresetPreview();
     }
 
     // Save preset - Ctrl+S
-    if (io.KeysData[ImGuiKey_S - ImGuiKey_NamedKey_BEGIN].Down && ctrl)
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_S, false))
     {
 
     }
 
     // New preset - Ctrl+N
-    if (io.KeysData[ImGuiKey_N - ImGuiKey_NamedKey_BEGIN].Down && ctrl)
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_N, false))
     {
         Show("");
     }
