@@ -966,7 +966,7 @@ void TextEditor::HandleMouseInputs()
 
     if (ImGui::IsWindowHovered())
     {
-        if (!shift && !alt)
+        if (!alt)
         {
             auto click = ImGui::IsMouseClicked(0);
             auto doubleClick = ImGui::IsMouseDoubleClicked(0);
@@ -1013,7 +1013,13 @@ void TextEditor::HandleMouseInputs()
 			*/
             else if (click)
             {
-                mState.mCursorPosition = mInteractiveStart = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
+                if (shift)
+                {
+                    mInteractiveStart = mState.mSelectionStart;
+                    mState.mCursorPosition = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
+                }
+                else
+                    mState.mCursorPosition = mInteractiveStart = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
                 if (ctrl)
                     mSelectionMode = SelectionMode::Word;
                 else
@@ -3185,14 +3191,6 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::MilkdropEx
             "_modop", "_powop", "_neg", "_gmem"};
         for (auto& k : nseel2Keywords)
             milkdropLangDef.mKeywords.insert(k);
-
-        static const char* const identifiers[] = {};
-        for (auto& k : identifiers)
-        {
-            Identifier id;
-            id.mDeclaration = "Internal function";
-            milkdropLangDef.mIdentifiers.insert(std::make_pair(std::string(k), id));
-        }
 
         milkdropLangDef.mTokenize = [](const char* in_begin, const char* in_end, const char*& out_begin, const char*& out_end, PaletteIndex& paletteIndex) -> bool {
             paletteIndex = PaletteIndex::Max;
