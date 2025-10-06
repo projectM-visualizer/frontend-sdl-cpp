@@ -206,6 +206,13 @@ std::string ProjectMWrapper::ProjectMRuntimeVersion()
     return projectMRuntimeVersion;
 }
 
+void ProjectMWrapper::PresetFileNameToClipboard() const
+{
+    auto presetName = projectm_playlist_item(_playlist, projectm_playlist_get_position(_playlist));
+    SDL_SetClipboardText(presetName);
+    projectm_playlist_free_string(presetName);
+}
+
 void ProjectMWrapper::PresetSwitchedEvent(bool isHardCut, unsigned int index, void* context)
 {
     auto that = reinterpret_cast<ProjectMWrapper*>(context);

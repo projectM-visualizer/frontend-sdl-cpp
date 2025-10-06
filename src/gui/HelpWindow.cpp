@@ -167,5 +167,6 @@ void HelpWindow::FillKeyboardShortcutsTable()
         {"Increase Beat Sensitivity by 1%", "Cursor Up"},
         {"Decrease Beat Sensitivity by 1%", "Cursor Down"},
         {"Add Random Waveform at Mouse Pointer", "Shift+Left Mouse"},
-        {"Clear Random Waveforms", "Middle Mouse"}};
+        {"Clear Random Waveforms", "Middle Mouse"},
+        {"Copy Current Preset Path to Clipboard", "Ctrl-c"}};
 }

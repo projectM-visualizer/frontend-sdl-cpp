@@ -75,6 +75,11 @@ public:
      */
     std::string ProjectMRuntimeVersion();
 
+    /**
+     * Copies the full path of the current preset into the OS clipboard.
+     */
+    void PresetFileNameToClipboard() const;
+
 private:
     /**
      * @brief projectM callback. Called whenever a preset is switched.

@@ -77,6 +77,13 @@ void MainMenu::Draw()
                 _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::ToggleShuffle));
             }
 
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Copy Current Preset Filename", "Ctrl+c"))
+            {
+                _projectMWrapper.PresetFileNameToClipboard();
+            }
+
             ImGui::EndMenu();
         }
 

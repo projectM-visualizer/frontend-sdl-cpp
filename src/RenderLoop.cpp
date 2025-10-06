@@ -275,6 +275,13 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
         }
         break;
 
+        case SDLK_c:
+            if (modifierPressed)
+            {
+                _projectMWrapper.PresetFileNameToClipboard();
+            }
+            break;
+
 #ifdef _DEBUG
         case SDLK_d:
             // Write next rendered frame to file
