@@ -225,14 +225,20 @@ void ProjectMWrapper::PresetSwitchedEvent(bool isHardCut, unsigned int index, vo
 
 void ProjectMWrapper::PlaybackControlNotificationHandler(const Poco::AutoPtr<PlaybackControlNotification>& notification)
 {
+    bool shuffleEnabled = projectm_playlist_get_shuffle(_playlist);
+
     switch (notification->ControlAction())
     {
         case PlaybackControlNotification::Action::NextPreset:
+            projectm_playlist_set_shuffle(_playlist, false);
             projectm_playlist_play_next(_playlist, !notification->SmoothTransition());
+            projectm_playlist_set_shuffle(_playlist, shuffleEnabled);
             break;
 
         case PlaybackControlNotification::Action::PreviousPreset:
+            projectm_playlist_set_shuffle(_playlist, false);
             projectm_playlist_play_previous(_playlist, !notification->SmoothTransition());
+            projectm_playlist_set_shuffle(_playlist, shuffleEnabled);
             break;
 
         case PlaybackControlNotification::Action::LastPreset:
@@ -240,7 +246,6 @@ void ProjectMWrapper::PlaybackControlNotificationHandler(const Poco::AutoPtr<Pla
             break;
 
         case PlaybackControlNotification::Action::RandomPreset: {
-            bool shuffleEnabled = projectm_playlist_get_shuffle(_playlist);
             projectm_playlist_set_shuffle(_playlist, true);
             projectm_playlist_play_next(_playlist, !notification->SmoothTransition());
             projectm_playlist_set_shuffle(_playlist, shuffleEnabled);
@@ -248,7 +253,7 @@ void ProjectMWrapper::PlaybackControlNotificationHandler(const Poco::AutoPtr<Pla
         }
 
         case PlaybackControlNotification::Action::ToggleShuffle:
-            _userConfig->setBool("projectM.shuffleEnabled", !projectm_playlist_get_shuffle(_playlist));
+            _userConfig->setBool("projectM.shuffleEnabled", !shuffleEnabled);
             break;
 
         case PlaybackControlNotification::Action::TogglePresetLocked: {
