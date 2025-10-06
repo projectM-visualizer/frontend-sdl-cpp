@@ -91,6 +91,7 @@ void AudioCaptureImpl::AudioDeviceIndex(int index)
 {
     if (index >= -1 && index < SDL_GetNumAudioDevices(true))
     {
+        StopRecording();
         _currentAudioDeviceIndex = index;
         StartRecording(_projectMHandle, index);
     }
