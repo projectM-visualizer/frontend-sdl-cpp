@@ -97,7 +97,6 @@ void ProjectMGUI::UpdateFontSize()
     _uiFont = io.Fonts->AddFontFromMemoryCompressedTTF(&AnonymousPro_compressed_data, AnonymousPro_compressed_size, floor(24.0f * _textScalingFactor));
     _toastFont = io.Fonts->AddFontFromMemoryCompressedTTF(&LiberationSans_compressed_data, LiberationSans_compressed_size, floor(40.0f * _textScalingFactor));
     io.Fonts->Build();
-    ImGui_ImplOpenGL3_CreateFontsTexture();
 
     ImGui::GetStyle().ScaleAllSizes(1.0);
 }
