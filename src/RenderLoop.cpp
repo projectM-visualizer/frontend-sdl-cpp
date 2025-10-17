@@ -404,7 +404,10 @@ void RenderLoop::MouseDownEvent(const SDL_MouseButtonEvent& event)
             break;
 
         case SDL_BUTTON_RIGHT:
-            _sdlRenderingWindow.ToggleFullscreen();
+            if (!_keyStates.AnyPressed())
+            {
+                _sdlRenderingWindow.ToggleFullscreen();
+            }
             break;
 
         case SDL_BUTTON_MIDDLE:

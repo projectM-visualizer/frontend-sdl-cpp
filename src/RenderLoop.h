@@ -21,6 +21,11 @@ public:
 
 protected:
     struct ModifierKeyStates {
+        bool AnyPressed() const
+        {
+            return _shiftPressed || _ctrlPressed || _altPressed || _metaPressed;
+        }
+
         bool _shiftPressed{false}; //!< L/R shift keys
         bool _ctrlPressed{false}; //!< L/R control keys
         bool _altPressed{false}; //!< L/R alt keys
