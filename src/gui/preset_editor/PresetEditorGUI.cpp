@@ -10,6 +10,7 @@
 #include "notifications/DisplayToastNotification.h"
 #include "notifications/UpdateWindowTitleNotification.h"
 
+#include <SDL_clipboard.h>
 #include <imgui.h>
 
 #include <Poco/NotificationCenter.h>
@@ -121,6 +122,12 @@ void PresetEditorGUI::UpdatePresetPreview()
     {
         Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Preset reload failed:\n" + errorMessage));
     }
+}
+
+void PresetEditorGUI::CopyToClipboard()
+{
+    _editorPreset.ToParsedFile(_presetFile);
+    SDL_SetClipboardText(_presetFile.AsString().c_str());
 }
 
 void PresetEditorGUI::HandleGlobalEditorKeys()
