@@ -46,6 +46,11 @@ public:
      */
     void UpdatePresetPreview();
 
+    /**
+     * @brief Reloads the rendered preview with the current changes.
+     */
+    void CopyToClipboard();
+
 private:
     void HandleGlobalEditorKeys();
     void TakeProjectMControl();

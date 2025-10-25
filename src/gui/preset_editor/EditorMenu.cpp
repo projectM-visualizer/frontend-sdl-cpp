@@ -59,6 +59,11 @@ void EditorMenu::DrawFileMenu()
         {
         }
 
+        if (ImGui::MenuItem(ICON_FA_COPY " Copy Preset to Clipboard"))
+        {
+            _presetEditorGUI.CopyToClipboard();
+        }
+
         ImGui::Separator();
 
         if (ImGui::MenuItem(ICON_FA_CIRCLE_XMARK " Exit Preset Editor"))
