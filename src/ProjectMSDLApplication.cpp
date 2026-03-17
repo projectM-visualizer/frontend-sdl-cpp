@@ -233,6 +233,11 @@ void ProjectMSDLApplication::defineOptions(Poco::Util::OptionSet& options)
     options.addOption(Option("beatSensitivity", "", "Beat sensitivity. Between 0.0 and 2.0. Default 1.0.",
                              false, "<number>", true)
                           .binding("projectM.beatSensitivity", _commandLineOverrides));
+#ifdef __linux__
+    options.addOption(Option("window_id", "wid", "Existing X11 window id to draw in.",
+                             false, "<number>", true)
+                          .binding("window.wid", _commandLineOverrides));
+#endif
 }
 
 int ProjectMSDLApplication::main(POCO_UNUSED const std::vector<std::string>& args)
