@@ -318,7 +318,7 @@ void EditorPreset::ToParsedFile(PresetFile& parsedFile)
         parsedFile.SetBool(shapecodePrefix + "additive", shape.additive);
         parsedFile.SetBool(shapecodePrefix + "thickOutline", shape.thickOutline);
         parsedFile.SetBool(shapecodePrefix + "textured", shape.textured);
-        parsedFile.SetInt(shapecodePrefix + "nushape.inst", shape.instances);
+        parsedFile.SetInt(shapecodePrefix + "num_inst", shape.instances);
         parsedFile.SetFloat(shapecodePrefix + "x", shape.x);
         parsedFile.SetFloat(shapecodePrefix + "y", shape.y);
         parsedFile.SetFloat(shapecodePrefix + "rad", shape.radius);
