@@ -770,7 +770,7 @@ void PresetEditorGUI::DrawCustomWaveSettings(EditorPreset::Wave& waveform)
         ImGui::SliderFloat("Scaling", &waveform.scaling, 0.0f, 10.0f);
         DrawHelpTooltip("Waveform value scaling factor.");
 
-        ImGui::SliderFloat("Smoothing", &waveform.scaling, 0.0f, 1.0f);
+        ImGui::SliderFloat("Smoothing", &waveform.smoothing, 0.0f, 1.0f);
         DrawHelpTooltip("Waveform smoothing value.\n"
                         "0.0=no smoothing, 0.5=default, 1.0=extreme smoothing");
 
