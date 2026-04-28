@@ -155,3 +155,41 @@ mkdir cmake-build
 cmake -G Xcode -S . -B cmake-build -DCMAKE_CONFIGURATION_TYPES=Debug,Release
 cmake --build cmake-build --config Release
 ```
+
+#### macOS: Full build from source (including libprojectM)
+
+Pre-built macOS binaries are not currently published. Use the following to build everything from source:
+
+**Prerequisites**
+
+```shell
+xcode-select --install
+brew install cmake sdl2 poco freetype git
+```
+
+**1. Build and install libprojectM**
+
+```shell
+git clone --recurse-submodules https://github.com/projectM-visualizer/projectm.git
+cmake -S projectm -B projectm/cmake-build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=~/dev/projectm-install \
+  -DENABLE_EMSCRIPTEN=OFF
+cmake --build projectm/cmake-build --config Release --parallel $(sysctl -n hw.logicalcpu)
+cmake --install projectm/cmake-build
+```
+
+**2. Build frontend-sdl2**
+
+```shell
+git clone --recurse-submodules https://github.com/projectM-visualizer/frontend-sdl2.git
+cmake -S frontend-sdl2 -B frontend-sdl2/cmake-build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_PREFIX_PATH=~/dev/projectm-install \
+  -DCMAKE_INSTALL_PREFIX=~/dev/projectm-install
+cmake --build frontend-sdl2/cmake-build --config Release --parallel $(sysctl -n hw.logicalcpu)
+cmake --install frontend-sdl2/cmake-build
+```
+
+`projectM.app` will be in `~/dev/projectm-install/`. Edit
+`projectM.app/Contents/Resources/projectMSDL.properties` to set your preset and texture paths, then launch the app.
