@@ -164,32 +164,36 @@ Pre-built macOS binaries are not currently published. Use the following to build
 
 ```shell
 xcode-select --install
-brew install cmake sdl2 poco freetype git
+brew install cmake ninja sdl2 poco freetype git
 ```
 
 **1. Build and install libprojectM**
 
 ```shell
 git clone --recurse-submodules https://github.com/projectM-visualizer/projectm.git
-cmake -S projectm -B projectm/cmake-build \
+cd projectm && mkdir cmake-build
+cmake -G Ninja -S . -B cmake-build \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=~/dev/projectm-install \
-  -DENABLE_EMSCRIPTEN=OFF
-cmake --build projectm/cmake-build --config Release --parallel $(sysctl -n hw.logicalcpu)
-cmake --install projectm/cmake-build
+  -DENABLE_PLAYLIST=ON \
+  -DBUILD_SHARED_LIBS=ON
+cmake --build cmake-build --parallel
+cmake --install cmake-build
+cd ..
 ```
 
 **2. Build frontend-sdl2**
 
 ```shell
 git clone --recurse-submodules https://github.com/projectM-visualizer/frontend-sdl2.git
-cmake -S frontend-sdl2 -B frontend-sdl2/cmake-build \
+cd frontend-sdl2 && mkdir cmake-build
+cmake -G Ninja -S . -B cmake-build \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_PREFIX_PATH=~/dev/projectm-install \
-  -DCMAKE_INSTALL_PREFIX=~/dev/projectm-install
-cmake --build frontend-sdl2/cmake-build --config Release --parallel $(sysctl -n hw.logicalcpu)
-cmake --install frontend-sdl2/cmake-build
+  -DCMAKE_INSTALL_PREFIX=~/dev/projectm-app
+cmake --build cmake-build --parallel
+cmake --install cmake-build
 ```
 
-`projectM.app` will be in `~/dev/projectm-install/`. Edit
+`projectM.app` will be in `~/dev/projectm-app/`. Edit
 `projectM.app/Contents/Resources/projectMSDL.properties` to set your preset and texture paths, then launch the app.
