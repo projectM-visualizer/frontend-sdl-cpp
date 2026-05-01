@@ -177,6 +177,8 @@ cmake -G Ninja -S . -B cmake-build \
   -DCMAKE_INSTALL_PREFIX=~/dev/projectm-install \
   -DENABLE_PLAYLIST=ON \
   -DBUILD_SHARED_LIBS=ON
+# Optional: add -DENABLE_MACOS_FRAMEWORK=ON to build as a .framework bundle
+# (libprojectM 4.2+ only — easier to link against in Xcode projects)
 cmake --build cmake-build --parallel
 cmake --install cmake-build
 cd ..
