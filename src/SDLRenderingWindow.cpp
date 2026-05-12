@@ -204,6 +204,10 @@ void SDLRenderingWindow::CreateSDLWindow()
     int top{_config->getInt("top", 0)};
     bool positionOverridden = _config->getBool("overridePosition", false);
 
+#ifdef __linux__
+    uint64_t wid{_config->getUInt64("wid", 0)};
+#endif
+
     if (!positionOverridden)
     {
         left = SDL_WINDOWPOS_UNDEFINED;
@@ -249,8 +253,18 @@ void SDLRenderingWindow::CreateSDLWindow()
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
-    _renderingWindow = SDL_CreateWindow("projectM", left, top, width, height,
-                                        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+#ifdef __linux__
+    if (wid) {
+        SDL_SetHint(SDL_HINT_VIDEO_FOREIGN_WINDOW_OPENGL, "1");
+        _renderingWindow = SDL_CreateWindowFrom((void*)wid);
+    }
+    else
+#endif
+    {
+      _renderingWindow = SDL_CreateWindow("projectM", left, top, width, height,
+                                          SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    }
+
     if (!_renderingWindow)
     {
         auto errorMessage = "Could not create SDL rendering window. Error: " + std::string(SDL_GetError());
