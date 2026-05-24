@@ -249,6 +249,8 @@ void SDLRenderingWindow::CreateSDLWindow()
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
+	SDL_SetHint(SDL_HINT_APP_NAME, "projectM");
+	
     _renderingWindow = SDL_CreateWindow("projectM", left, top, width, height,
                                         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (!_renderingWindow)
