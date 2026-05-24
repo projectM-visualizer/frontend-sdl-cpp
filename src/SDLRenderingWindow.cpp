@@ -16,7 +16,7 @@
 
 const char* SDLRenderingWindow::name() const
 {
-    return "SDL2 Rendering Window";
+    return "SDL2 Rendering Window"; // Why..? This isn't used anywhere
 }
 
 void SDLRenderingWindow::initialize(Poco::Util::Application& app)
@@ -249,6 +249,8 @@ void SDLRenderingWindow::CreateSDLWindow()
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
+	SDL_SetHint(SDL_HINT_APP_NAME, "projectM");
+	
     _renderingWindow = SDL_CreateWindow("projectM", left, top, width, height,
                                         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (!_renderingWindow)
