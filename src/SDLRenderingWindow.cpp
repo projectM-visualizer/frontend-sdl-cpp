@@ -16,7 +16,7 @@
 
 const char* SDLRenderingWindow::name() const
 {
-    return "SDL2 Rendering Window"; // Why..? This isn't used anywhere
+    return "SDL2 Rendering Window";
 }
 
 void SDLRenderingWindow::initialize(Poco::Util::Application& app)
