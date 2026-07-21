@@ -8,7 +8,11 @@
 
 #include "notifications/DisplayToastNotification.h"
 
-#include <SDL2/SDL.h>
+#ifdef USE_SDL3
+# include <SDL3/SDL.h>
+#else
+# include <SDL2/SDL.h>
+#endif
 
 #include <Poco/Logger.h>
 #include <Poco/NObserver.h>

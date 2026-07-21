@@ -12,11 +12,19 @@
 #include <GL/glew.h>
 #endif
 
-#include <SDL2/SDL_opengl.h>
+#ifdef USE_SDL3
+# include <SDL3/SDL_opengl.h>
+#else
+# include <SDL2/SDL_opengl.h>
+#endif
 
 const char* SDLRenderingWindow::name() const
 {
+#ifdef USE_SDL3
+    return "SDL3 Rendering Window";
+#else
     return "SDL2 Rendering Window";
+#endif
 }
 
 void SDLRenderingWindow::initialize(Poco::Util::Application& app)
@@ -52,7 +60,11 @@ void SDLRenderingWindow::uninitialize()
 
 void SDLRenderingWindow::GetDrawableSize(int& width, int& height) const
 {
+#ifdef USE_SDL3
+    SDL_GetWindowSizeInPixels(_renderingWindow, &width, &height);
+#else
     SDL_GL_GetDrawableSize(_renderingWindow, &width, &height);
+#endif
 }
 
 void SDLRenderingWindow::Swap() const

@@ -80,20 +80,44 @@ target_compile_definitions(projectMSDL
         PROJECTMSDL_VERSION="${PROJECT_VERSION}"
         )
 
+if(USE_SDL3)
+    target_compile_definitions(projectMSDL PRIVATE USE_SDL3)
+endif()
+
 target_link_libraries(projectMSDL
         PRIVATE
         ProjectMSDL-GUI
         ProjectMSDL-Notifications
         libprojectM::playlist
         Poco::Util
-        SDL2::SDL2$<$<STREQUAL:${SDL2_LINKAGE},static>:-static>
-        SDL2::SDL2main
         OpenGL::$<IF:$<BOOL:${ENABLE_GLES}>,GLES3,GL>
         )
 
-if (MSVC)
-    set_target_properties(projectMSDL
-            PROPERTIES
-            VS_DPI_AWARE "PerMonitor"
+if(USE_SDL3)
+    target_link_libraries(projectMSDL
+            PRIVATE
+            SDL3::SDL3$<$<STREQUAL:${SDL_LINKAGE},static>:-static>
             )
+else()
+    target_link_libraries(projectMSDL
+            PRIVATE
+            SDL2::SDL2$<$<STREQUAL:${SDL_LINKAGE},static>:-static>
+            SDL2::SDL2main
+            )
+endif()
+
+if (MSVC)
+    if(USE_SDL3)
+        set_target_properties(projectMSDL
+                PROPERTIES
+                VS_DPI_AWARE "PerMonitor"
+                VS_GLOBAL_SUBSYSTEM "Console"
+                LINKER_FLAGS "/SUBSYSTEM:CONSOLE"
+                )
+    else()
+        set_target_properties(projectMSDL
+                PROPERTIES
+                VS_DPI_AWARE "PerMonitor"
+                )
+    endif()
 endif ()

@@ -1,21 +1,41 @@
 
+if(USE_SDL3)
+    set(SDL_IMGUI_BACKEND_SOURCES
+            vendor/imgui/backends/imgui_impl_sdl3.cpp
+            vendor/imgui/backends/imgui_impl_sdl3.h
+            )
+    set(SDL_IMGUI_DEMO_MAIN vendor/imgui/examples/example_sdl3_opengl3/main.cpp)
+else()
+    set(SDL_IMGUI_BACKEND_SOURCES
+            vendor/imgui/backends/imgui_impl_sdl2.cpp
+            vendor/imgui/backends/imgui_impl_sdl2.h
+            )
+    set(SDL_IMGUI_DEMO_MAIN vendor/imgui/examples/example_sdl2_opengl3/main.cpp)
+endif()
+
 add_library(ImGui STATIC
         vendor/imgui/imgui.cpp
         vendor/imgui/imgui.h
         vendor/imgui/imgui_draw.cpp
         vendor/imgui/imgui_tables.cpp
         vendor/imgui/imgui_widgets.cpp
-        vendor/imgui/backends/imgui_impl_sdl2.cpp
-        vendor/imgui/backends/imgui_impl_sdl2.h
+        ${SDL_IMGUI_BACKEND_SOURCES}
         vendor/imgui/backends/imgui_impl_opengl3.cpp
         vendor/imgui/backends/imgui_impl_opengl3.h
         vendor/imgui/backends/imgui_impl_opengl3_loader.h
         )
 
-target_link_libraries(ImGui
-        PUBLIC
-        SDL2::SDL2$<$<STREQUAL:${SDL2_LINKAGE},static>:-static>
-        )
+if(USE_SDL3)
+    target_link_libraries(ImGui
+            PUBLIC
+            SDL3::SDL3$<$<STREQUAL:${SDL_LINKAGE},static>:-static>
+            )
+else()
+    target_link_libraries(ImGui
+            PUBLIC
+            SDL2::SDL2$<$<STREQUAL:${SDL_LINKAGE},static>:-static>
+            )
+endif()
 
 if(ENABLE_FREETYPE AND Freetype_FOUND)
     target_sources(ImGui
@@ -35,12 +55,21 @@ if(ENABLE_FREETYPE AND Freetype_FOUND)
             )
 endif()
 
-target_include_directories(ImGui
-        PUBLIC
-        ${CMAKE_SOURCE_DIR}/vendor/imgui
-        ${CMAKE_SOURCE_DIR}/vendor/imgui/backends
-        ${SDL2_INCLUDE_DIRS}
-        )
+if(USE_SDL3)
+    target_include_directories(ImGui
+            PUBLIC
+            ${CMAKE_SOURCE_DIR}/vendor/imgui
+            ${CMAKE_SOURCE_DIR}/vendor/imgui/backends
+            ${SDL3_INCLUDE_DIRS}
+            )
+else()
+    target_include_directories(ImGui
+            PUBLIC
+            ${CMAKE_SOURCE_DIR}/vendor/imgui
+            ${CMAKE_SOURCE_DIR}/vendor/imgui/backends
+            ${SDL2_INCLUDE_DIRS}
+            )
+endif()
 
 if (ENABLE_GLES)
     target_compile_definitions(ImGui
@@ -54,16 +83,25 @@ add_executable(ImGuiBinaryToCompressedC EXCLUDE_FROM_ALL
         vendor/imgui/misc/fonts/binary_to_compressed_c.cpp
         )
 
-# Add SDL2/OpenGL 3 Dear ImGui example application target for testing
+# Add SDL/OpenGL 3 Dear ImGui example application target for testing
 add_executable(ImGuiDemo EXCLUDE_FROM_ALL
         vendor/imgui/imgui_demo.cpp
-        vendor/imgui/examples/example_sdl2_opengl3/main.cpp
+        ${SDL_IMGUI_DEMO_MAIN}
         )
 
-target_link_libraries(ImGuiDemo
-        PRIVATE
-        ImGui
-        SDL2::SDL2
-        SDL2::SDL2main
-        OpenGL::GL
-        )
+if(USE_SDL3)
+    target_link_libraries(ImGuiDemo
+            PRIVATE
+            ImGui
+            SDL3::SDL3
+            OpenGL::GL
+            )
+else()
+    target_link_libraries(ImGuiDemo
+            PRIVATE
+            ImGui
+            SDL2::SDL2
+            SDL2::SDL2main
+            OpenGL::GL
+            )
+endif()

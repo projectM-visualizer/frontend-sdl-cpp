@@ -1,6 +1,10 @@
 #pragma once
 
-#include <SDL2/SDL.h>
+#ifdef USE_SDL3
+# include <SDL3/SDL.h>
+#else
+# include <SDL2/SDL.h>
+#endif
 
 #include <Poco/Logger.h>
 
@@ -66,11 +70,20 @@ public:
     /**
      * @brief Asks the capture client to fill projectM's audio buffer for the next frame.
      *
-     * As of now, SDL uses async callbacks to directly fill projectM's audio buffer.
-     *
-     * @todo Store audio samples internally and push them to projectM when requested.
+     * In SDL2, audio is captured via callback. In SDL3, audio data is polled here.
      */
-    void FillBuffer(){};
+    void FillBuffer();
+
+    /**
+     * @brief Returns the current audio peak level.
+     * @return A value between 0.0 and 1.0, or -1.0 if not available.
+     */
+    float CurrentAudioLevel() const;
+
+    /**
+     * @brief Refreshes the audio device list (e.g. after a hotplug event).
+     */
+    void RefreshDeviceList();
 
 protected:
     /**
@@ -79,8 +92,9 @@ protected:
      */
     bool OpenAudioDevice();
 
+#ifndef USE_SDL3
     /**
-     * @brief SDL audio capture callback.
+     * @brief SDL2 audio capture callback.
      *
      * Called everytime if there is new data available in the audio recording buffer.
      *
@@ -89,6 +103,7 @@ protected:
      * @param len
      */
     static void AudioInputCallback(void* userData, unsigned char* stream, int len);
+#endif
 
     projectm* _projectMHandle{nullptr}; //!< Handle if the projectM instance that will receive the audio data.
     int32_t _currentAudioDeviceIndex{-1}; //!< Currently selected audio device index.

@@ -151,3 +151,20 @@ int AudioCapture::GetInitialAudioDeviceIndex(const AudioDeviceMap& deviceList)
 
     return audioDeviceIndex;
 }
+
+float AudioCapture::CurrentAudioLevel() const
+{
+    if (!_impl)
+    {
+        return -1.0f;
+    }
+    return _impl->CurrentAudioLevel();
+}
+
+void AudioCapture::RefreshDeviceList()
+{
+    if (_impl)
+    {
+        _impl->RefreshDeviceList();
+    }
+}

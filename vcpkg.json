@@ -3,6 +3,7 @@
   "dependencies": [
     "glew",
     "sdl2",
+    "sdl3",
     {
       "name": "poco",
       "features": [
