@@ -85,6 +85,7 @@ set(PACKAGING_CONFIG_FILE "${DEFAULT_PACKAGING_CONFIG}" CACHE FILEPATH "CPack co
 
 set(SDL2_LINKAGE "shared" CACHE STRING "Set to either shared or static to specify how libSDL2 should be linked. Defaults to shared.")
 option(ENABLE_FREETYPE "Use the Freetype font rendering library instead of the built-in stb_truetype if available" ON)
+option(ENABLE_PLUTOSVG "Use the PlutoSVG for better OpenType SVG font support" ON)
 
 
 set(PRESET_DIRS "" CACHE STRING "List of paths with presets. Will be installed in \"presets\" ")
@@ -115,6 +116,10 @@ endif()
 
 if(ENABLE_FREETYPE)
     find_package(Freetype)
+
+    if(Freetype_FOUND AND ENABLE_PLUTOSVG AND (Freetype_VERSION VERSION_GREATER_EQUAL "2.12"))
+        find_package(plutosvg)
+    endif()
 endif()
 
 include(SDL2Target)

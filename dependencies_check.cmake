@@ -25,3 +25,13 @@ if(Poco_VERSION VERSION_GREATER_EQUAL 1.10.0 AND Poco_VERSION VERSION_LESS_EQUAL
     message(AUTHOR_WARNING "Poco versions 1.10.0 and 1.10.1 have a known issue with subsystem uninitialization order.\n"
             "It is HIGHLY recommended to use at least version 1.11.0, otherwise it can lead to crashes on application shutdown.")
 endif()
+
+if(ENABLE_PLUTOSVG)
+    if(NOT ENABLE_FREETYPE)
+        message(AUTHOR_WARNING "Freetype is not enabled. PlutoSVG will not be used.")
+    elseif(NOT Freetype_FOUND)
+        message(AUTHOR_WARNING "Freetype not found. PlutoSVG will not be used.")
+    elseif(Freetype_VERSION VERSION_LESS "2.12")
+        message(AUTHOR_WARNING "PlutoSVG requires Freetype 2.12 or higher. Version found: ${Freetype_VERSION}. PlutoSVG will not be used.")
+    endif()
+endif()

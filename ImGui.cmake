@@ -33,6 +33,20 @@ if(ENABLE_FREETYPE AND Freetype_FOUND)
             PUBLIC
             Freetype::Freetype
             )
+
+    if(plutosvg_FOUND)
+        if (TARGET plutosvg::plutosvg)
+            target_compile_definitions(ImGui
+                    PRIVATE
+                    IMGUI_ENABLE_FREETYPE_PLUTOSVG
+                    )
+
+            target_link_libraries(ImGui
+                    PUBLIC
+                    plutosvg::plutosvg
+                    )
+        endif()
+    endif()
 endif()
 
 target_include_directories(ImGui
