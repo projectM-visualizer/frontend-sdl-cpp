@@ -113,5 +113,5 @@ private:
 
     Poco::NObserver<ProjectMWrapper, PlaybackControlNotification> _playbackControlNotificationObserver{*this, &ProjectMWrapper::PlaybackControlNotificationHandler};
 
-    Poco::Logger& _logger{Poco::Logger::get("SDLRenderingWindow")}; //!< The class logger.
+    Poco::Logger& _logger{Poco::Logger::get("ProjectMWrapper")}; //!< The class logger.
 };
