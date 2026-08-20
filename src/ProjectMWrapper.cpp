@@ -13,6 +13,73 @@
 
 #include <cmath>
 
+#if (PROJECTM_VERSION_MAJOR >= 4) && (PROJECTM_VERSION_MINOR >=2)
+static inline projectm_log_level get_projectM_log_level(Poco::Message::Priority log_level)
+{
+    switch (log_level)
+    {
+        case Poco::Message::PRIO_FATAL:
+            return PROJECTM_LOG_LEVEL_FATAL;
+        case Poco::Message::PRIO_CRITICAL:
+        case Poco::Message::PRIO_ERROR:
+            return PROJECTM_LOG_LEVEL_ERROR;
+        case Poco::Message::PRIO_WARNING:
+            return PROJECTM_LOG_LEVEL_WARN;
+        case Poco::Message::PRIO_NOTICE:
+        case Poco::Message::PRIO_INFORMATION:
+            return PROJECTM_LOG_LEVEL_INFO;
+        case Poco::Message::PRIO_DEBUG:
+            return PROJECTM_LOG_LEVEL_DEBUG;
+        case Poco::Message::PRIO_TRACE:
+            return PROJECTM_LOG_LEVEL_TRACE;
+        default:
+            if (log_level >= Poco::Message::PRIO_TRACE)
+            {
+                return PROJECTM_LOG_LEVEL_TRACE;
+            }
+            return PROJECTM_LOG_LEVEL_NOTSET;
+    }
+    return PROJECTM_LOG_LEVEL_NOTSET;
+}
+
+static inline projectm_log_level get_projectM_log_level(int log_level)
+{
+    return get_projectM_log_level(static_cast<Poco::Message::Priority>(log_level));
+}
+
+static inline Poco::Message::Priority get_poco_log_level(projectm_log_level log_level)
+{
+    switch (log_level)
+    {
+        case PROJECTM_LOG_LEVEL_FATAL:
+            return Poco::Message::PRIO_FATAL;
+        case PROJECTM_LOG_LEVEL_ERROR:
+            return Poco::Message::PRIO_ERROR;
+        case PROJECTM_LOG_LEVEL_WARN:
+            return Poco::Message::PRIO_WARNING;
+        case PROJECTM_LOG_LEVEL_INFO:
+            return Poco::Message::PRIO_INFORMATION;
+        case PROJECTM_LOG_LEVEL_DEBUG:
+            return Poco::Message::PRIO_DEBUG;
+        case PROJECTM_LOG_LEVEL_TRACE:
+            return Poco::Message::PRIO_TRACE;
+        default:
+            if (log_level >= PROJECTM_LOG_LEVEL_FATAL)
+            {
+                return Poco::Message::PRIO_FATAL;
+            }
+            return static_cast<Poco::Message::Priority>(0);
+    }
+    return static_cast<Poco::Message::Priority>(0);
+}
+
+static void projectM_log_callback(const char* message, projectm_log_level log_level, void* user_data)
+{
+    Poco::Logger* logger = static_cast<Poco::Logger*>(user_data);
+    logger->log(Poco::Message("projectM", message, get_poco_log_level(log_level)));
+}
+#endif // (PROJECTM_VERSION_MAJOR >= 4) && (PROJECTM_VERSION_MINOR >=2)
+
 const char* ProjectMWrapper::name() const
 {
     return "ProjectM Wrapper";
@@ -24,6 +91,11 @@ void ProjectMWrapper::initialize(Poco::Util::Application& app)
     _projectMConfigView = projectMSDLApp.config().createView("projectM");
     _userConfig = projectMSDLApp.UserConfiguration();
     poco_information_f1(_logger, "Events enabled: %?d", _projectMConfigView->eventsEnabled());
+
+#if (PROJECTM_VERSION_MAJOR >= 4) && (PROJECTM_VERSION_MINOR >=2)
+    projectm_set_log_level(get_projectM_log_level(_PMlogger.getLevel()), false);
+    projectm_set_log_callback(projectM_log_callback, false, &_PMlogger);
+#endif
 
     if (!_projectM)
     {
