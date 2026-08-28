@@ -5,6 +5,7 @@
 #include "ProjectMSDLApplication.h"
 
 #include "AudioCapture.h"
+#include "PlaylistManager.h"
 #include "ProjectMWrapper.h"
 #include "RenderLoop.h"
 #include "SDLRenderingWindow.h"
@@ -24,6 +25,7 @@ ProjectMSDLApplication::ProjectMSDLApplication()
     // Note: order here is important, as subsystems are initialized in the same order.
     addSubsystem(new SDLRenderingWindow);
     addSubsystem(new ProjectMWrapper);
+    addSubsystem(new PlaylistManager);
     addSubsystem(new AudioCapture);
     addSubsystem(new ProjectMGUI);
 }
@@ -233,6 +235,10 @@ void ProjectMSDLApplication::defineOptions(Poco::Util::OptionSet& options)
     options.addOption(Option("beatSensitivity", "", "Beat sensitivity. Between 0.0 and 2.0. Default 1.0.",
                              false, "<number>", true)
                           .binding("projectM.beatSensitivity", _commandLineOverrides));
+
+    options.addOption(Option("save-presets", "", "Directory to save current presets to.",
+                             false, "<path>", true)
+                          .binding("application.savePresetsPath", _commandLineOverrides));
 }
 
 int ProjectMSDLApplication::main(POCO_UNUSED const std::vector<std::string>& args)

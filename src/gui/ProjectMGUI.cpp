@@ -9,6 +9,7 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
 
+#include <cmath>
 #include <Poco/NotificationCenter.h>
 
 #include <Poco/Util/Application.h>
@@ -121,10 +122,12 @@ bool ProjectMGUI::Visible() const
     return _visible;
 }
 
-void ProjectMGUI::Draw()
+void ProjectMGUI::Draw(float audioLevel)
 {
+    bool showAudioLevel = audioLevel >= 0.0f;
+
     // Don't render UI at all if there's no need.
-    if (!_toast && !_visible)
+    if (!_toast && !_visible && !showAudioLevel)
     {
         return;
     }
@@ -164,6 +167,38 @@ void ProjectMGUI::Draw()
         _settingsWindow.Draw();
         _aboutWindow.Draw();
         _helpWindow.Draw();
+    }
+
+    // Audio level indicator — drawn regardless of UI visibility
+    if (showAudioLevel)
+    {
+        ImGui::SetNextWindowPos(ImVec2(10, ImGui::GetIO().DisplaySize.y - 40),
+                                ImGuiCond_Always, ImVec2(0, 1));
+        ImGui::SetNextWindowBgAlpha(0.4f);
+
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
+                                 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoNav;
+
+        if (ImGui::Begin("AudioLevel", nullptr, flags))
+        {
+            // Color gradient: green → yellow → red
+            ImU32 color;
+            if (audioLevel < 0.5f)
+            {
+                color = ImGui::ColorConvertFloat4ToU32(ImVec4(audioLevel * 2.0f, 1.0f, 0.0f, 1.0f));
+            }
+            else
+            {
+                color = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 2.0f * (1.0f - audioLevel), 0.0f, 1.0f));
+            }
+
+            ImGui::TextUnformatted("Audio");
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, color);
+            ImGui::ProgressBar(audioLevel, ImVec2(100, 12), "");
+            ImGui::PopStyleColor();
+        }
+        ImGui::End();
     }
 
     ImGui::Render();
@@ -210,6 +245,15 @@ void ProjectMGUI::ShowAboutWindow()
 void ProjectMGUI::ShowHelpWindow()
 {
     _helpWindow.Show();
+}
+
+void ProjectMGUI::ShowPlaylistBrowser()
+{
+    if (!_presetSelection)
+    {
+        _presetSelection = std::make_unique<PresetSelection>(*_projectMWrapper);
+    }
+    _presetSelection->Show();
 }
 
 float ProjectMGUI::GetScalingFactor()

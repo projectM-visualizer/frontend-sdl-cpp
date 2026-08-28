@@ -102,6 +102,15 @@ void AudioCapture::FillBuffer()
     _impl->FillBuffer();
 }
 
+float AudioCapture::CurrentAudioLevel() const
+{
+    if (!_impl)
+    {
+        return -1.0f;
+    }
+    return _impl->CurrentAudioLevel();
+}
+
 void AudioCapture::PrintDeviceList(const AudioDeviceMap& deviceList) const
 {
     if (_config->getBool("listDevices", false))

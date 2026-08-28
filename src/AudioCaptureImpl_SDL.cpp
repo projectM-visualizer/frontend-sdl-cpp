@@ -160,3 +160,8 @@ void AudioCaptureImpl::AudioInputCallback(void* userData, unsigned char* stream,
     projectm_pcm_add_float(instance->_projectMHandle, reinterpret_cast<float*>(stream), samples,
                            static_cast<projectm_channels>(instance->_channels));
 }
+
+float AudioCaptureImpl::CurrentAudioLevel() const
+{
+    return -1.0f;
+}

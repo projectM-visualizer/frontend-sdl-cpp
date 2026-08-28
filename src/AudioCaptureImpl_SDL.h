@@ -65,12 +65,14 @@ public:
 
     /**
      * @brief Asks the capture client to fill projectM's audio buffer for the next frame.
-     *
-     * As of now, SDL uses async callbacks to directly fill projectM's audio buffer.
-     *
-     * @todo Store audio samples internally and push them to projectM when requested.
      */
     void FillBuffer(){};
+
+    /**
+     * @brief Returns the current audio peak level.
+     * @return A value between 0.0 and 1.0, or -1.0 if not available.
+     */
+    float CurrentAudioLevel() const;
 
 protected:
     /**

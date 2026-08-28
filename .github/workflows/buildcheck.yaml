@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Install Build Dependencies
         run: |
           sudo apt update
@@ -64,41 +63,99 @@ jobs:
           cmake --build cmake-build-libprojectm --parallel
           cmake --install "${{ github.workspace }}/cmake-build-libprojectm"
 
-      - name: Checkout frontend-sdl2 Sources
+      - name: Checkout frontend-sdl-cpp Sources
         uses: actions/checkout@v6
         with:
-          path: frontend-sdl2
+          path: frontend-sdl-cpp
           submodules: recursive
 
-      - name: Build frontend-sdl2
+      - name: Build frontend-sdl-cpp
+        env:
+          CMAKE_PREFIX_PATH: "${{ github.workspace }}/install-libprojectm;${{ github.workspace }}/install-poco"
         run: |
-          mkdir cmake-build-frontend-sdl2
-          cmake -G Ninja -S frontend-sdl2 -B cmake-build-frontend-sdl2  \
+          mkdir cmake-build-frontend
+          cmake -G Ninja -S frontend-sdl-cpp -B cmake-build-frontend  \
             -DCMAKE_BUILD_TYPE=Release  \
-            "-DCMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/install-libprojectm;${GITHUB_WORKSPACE}/install-poco"  \
-            "-DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install-frontend-sdl2"
-          cmake --build cmake-build-frontend-sdl2 --parallel
+            "-DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" \
+            "-DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install-frontend" \
+            -DUSE_SDL=SDL2
+          cmake --build cmake-build-frontend --parallel
 
       - name: Package projectMSDL
         run: |
-          cd cmake-build-frontend-sdl2
+          cd cmake-build-frontend
           cpack -G DEB
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
         with:
           name: projectMSDL-buildcheck-linux
-          path: cmake-build-frontend-sdl2/*.deb
+          path: cmake-build-frontend/*.deb
+
+  build-arch:
+    name: Arch Linux, x86_64
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+
+    steps:
+      - name: Install Build Dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel cmake ninja git poco glew freetype2 sdl2
+
+      - name: Checkout libprojectM Sources
+        uses: actions/checkout@v6
+        with:
+          repository: projectM-visualizer/projectm
+          path: projectm
+          submodules: recursive
+
+      - name: Build/Install libprojectM
+        run: |
+          mkdir cmake-build-libprojectm
+          cmake -G Ninja -S projectm -B cmake-build-libprojectm  \
+            -DBUILD_SHARED_LIBS=OFF  \
+            -DCMAKE_BUILD_TYPE=Release  \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install-libprojectm
+          cmake --build cmake-build-libprojectm --parallel
+          cmake --install cmake-build-libprojectm || \
+            cmake --build cmake-build-libprojectm --target install || true
+
+      - name: Checkout frontend-sdl-cpp Sources
+        uses: actions/checkout@v6
+        with:
+          path: frontend-sdl-cpp
+          submodules: recursive
+
+      - name: Build frontend-sdl-cpp
+        run: |
+          mkdir cmake-build-frontend
+          cmake -G Ninja -S frontend-sdl-cpp -B cmake-build-frontend  \
+            -DCMAKE_BUILD_TYPE=Release  \
+            "-DCMAKE_PREFIX_PATH=${{ github.workspace }}/install-libprojectm" \
+            "-DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install-frontend" \
+            -DUSE_SDL=SDL2
+          cmake --build cmake-build-frontend --parallel
+
+      - name: Package projectMSDL
+        run: |
+          cd cmake-build-frontend
+          cpack -G TGZ
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: projectMSDL-buildcheck-arch
+          path: cmake-build-frontend/*.tar.gz
 
   build-windows:
     name: Windows, x64
-    runs-on: windows-latest
+    runs-on: windows-2022
     env:
       USERNAME: projectM-visualizer
       VCPKG_EXE: ${{ github.workspace }}/vcpkg/vcpkg
       FEED_URL: https://nuget.pkg.github.com/projectM-visualizer/index.json
       VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/projectM-visualizer/index.json,readwrite"
-
 
     steps:
       - name: Checkout vcpkg
@@ -143,25 +200,25 @@ jobs:
       - name: Checkout projectMSDL Sources
         uses: actions/checkout@v6
         with:
-          path: frontend-sdl2
+          path: frontend-sdl-cpp
           submodules: recursive
 
       - name: Build projectMSDL
         run: |
-          mkdir cmake-build-frontend-sdl2
-          cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/frontend-sdl2" -B "${{ github.workspace }}/cmake-build-frontend-sdl2" -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static  -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend-sdl2" -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" -DCMAKE_VERBOSE_MAKEFILE=YES -DSDL2_LINKAGE=static -DBUILD_TESTING=YES
-          cmake --build "${{ github.workspace }}/cmake-build-frontend-sdl2" --parallel --config Release
+          mkdir cmake-build-frontend
+          cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/frontend-sdl-cpp" -B "${{ github.workspace }}/cmake-build-frontend" -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static  -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend" -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" -DCMAKE_VERBOSE_MAKEFILE=YES -DSDL_LINKAGE=static -DBUILD_TESTING=YES -DUSE_SDL=SDL2
+          cmake --build "${{ github.workspace }}/cmake-build-frontend" --parallel --config Release
 
       - name: Package projectMSDL
         run: |
-          cd cmake-build-frontend-sdl2
+          cd cmake-build-frontend
           cpack -G ZIP
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
         with:
           name: projectMSDL-buildcheck-windows
-          path: cmake-build-frontend-sdl2/*.zip
+          path: cmake-build-frontend/*.zip
 
   build-darwin:
     name: macOS, x86_64
@@ -169,7 +226,8 @@ jobs:
 
     steps:
       - name: Install Build Dependencies
-        run: brew install sdl2 ninja googletest poco
+        run: |
+          brew install sdl2 ninja googletest poco
 
       - name: Checkout libprojectM Sources
         uses: actions/checkout@v6
@@ -188,22 +246,24 @@ jobs:
       - name: Checkout projectMSDL Sources
         uses: actions/checkout@v6
         with:
-          path: frontend-sdl2
+          path: frontend-sdl-cpp
           submodules: recursive
 
       - name: Build projectMSDL
+        env:
+          CMAKE_PREFIX_PATH: "${{ github.workspace }}/install-libprojectm"
         run: |
-          mkdir cmake-build-frontend-sdl2
-          cmake -G Ninja -S "${{ github.workspace }}/frontend-sdl2" -B "${{ github.workspace }}/cmake-build-frontend-sdl2" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend-sdl2"
-          cmake --build "${{ github.workspace }}/cmake-build-frontend-sdl2" --parallel
+          mkdir cmake-build-frontend
+          cmake -G Ninja -S "${{ github.workspace }}/frontend-sdl-cpp" -B "${{ github.workspace }}/cmake-build-frontend" -DCMAKE_BUILD_TYPE=Release "-DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend" -DUSE_SDL=SDL2
+          cmake --build "${{ github.workspace }}/cmake-build-frontend" --parallel
 
       - name: Package projectMSDL
         run: |
-          cd cmake-build-frontend-sdl2
+          cd cmake-build-frontend
           cpack -G TGZ
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
         with:
           name: projectMSDL-buildcheck-macos
-          path: cmake-build-frontend-sdl2/*.tar.gz
+          path: cmake-build-frontend/*.tar.gz

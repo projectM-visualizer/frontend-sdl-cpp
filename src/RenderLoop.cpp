@@ -4,16 +4,24 @@
 
 #include "gui/ProjectMGUI.h"
 
+#include "notifications/DisplayToastNotification.h"
+#include "notifications/PlaybackControlNotification.h"
+
 #include <Poco/NotificationCenter.h>
 
 #include <Poco/Util/Application.h>
+#include <Poco/File.h>
+#include <Poco/Path.h>
 
 #include <SDL2/SDL.h>
 
 #include "ProjectMSDLApplication.h"
 
+#include <iostream>
+
 RenderLoop::RenderLoop()
     : _audioCapture(Poco::Util::Application::instance().getSubsystem<AudioCapture>())
+    , _playlistManager(Poco::Util::Application::instance().getSubsystem<PlaylistManager>())
     , _projectMWrapper(Poco::Util::Application::instance().getSubsystem<ProjectMWrapper>())
     , _sdlRenderingWindow(Poco::Util::Application::instance().getSubsystem<SDLRenderingWindow>())
     , _projectMHandle(_projectMWrapper.ProjectM())
@@ -21,6 +29,7 @@ RenderLoop::RenderLoop()
     , _projectMGui(Poco::Util::Application::instance().getSubsystem<ProjectMGUI>())
     , _userConfig(ProjectMSDLApplication::instance().UserConfiguration())
 {
+    _ratings.Load();
 }
 
 void RenderLoop::Run()
@@ -42,7 +51,7 @@ void RenderLoop::Run()
         CheckViewportSize();
         _audioCapture.FillBuffer();
         _projectMWrapper.RenderFrame();
-        _projectMGui.Draw();
+        _projectMGui.Draw(_showAudioLevel ? _audioCapture.CurrentAudioLevel() : -1.0f);
 
         _sdlRenderingWindow.Swap();
 
@@ -53,6 +62,9 @@ void RenderLoop::Run()
     }
 
     notificationCenter.removeObserver(_quitNotificationObserver);
+
+    // Save audio level visibility preference
+    _userConfig->setBool("projectM.displayAudioLevel", _showAudioLevel);
 
     projectm_playlist_set_preset_switched_event_callback(_playlistHandle, nullptr, nullptr);
 }
@@ -294,6 +306,10 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
             {
                 _sdlRenderingWindow.ToggleFullscreen();
             }
+            else if (!_projectMGui.WantsKeyboardInput())
+            {
+                QuickFavoriteCurrentPreset();
+            }
             break;
 
         case SDLK_i:
@@ -351,6 +367,26 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
         case SDLK_DOWN:
             // Decrease beat sensitivity
             _projectMWrapper.ChangeBeatSensitivity(-0.01f);
+            break;
+
+        case SDLK_v:
+            if (!_projectMGui.WantsKeyboardInput())
+            {
+                _showAudioLevel = !_showAudioLevel;
+                Poco::NotificationCenter::defaultCenter().postNotification(
+                    new DisplayToastNotification(_showAudioLevel ? "Audio level: shown" : "Audio level: hidden"));
+            }
+            break;
+
+        case SDLK_1:
+        case SDLK_2:
+        case SDLK_3:
+        case SDLK_4:
+        case SDLK_5:
+            if (!_projectMGui.WantsKeyboardInput())
+            {
+                RateCurrentPreset(keyCode - SDLK_1 + 1);
+            }
             break;
     }
 }
@@ -428,4 +464,49 @@ void RenderLoop::MouseUpEvent(const SDL_MouseButtonEvent& event)
 void RenderLoop::QuitNotificationHandler(const Poco::AutoPtr<QuitNotification>& notification)
 {
     _wantsToQuit = true;
+}
+
+void RenderLoop::RateCurrentPreset(int rating)
+{
+    auto* presetName = projectm_playlist_item(_playlistHandle, projectm_playlist_get_position(_playlistHandle));
+    if (!presetName)
+    {
+        return;
+    }
+
+    std::string path(presetName);
+    projectm_playlist_free_string(presetName);
+
+    _ratings.SetRating(path, rating);
+
+    std::string stars(rating, '*');
+    Poco::NotificationCenter::defaultCenter().postNotification(
+        new DisplayToastNotification("Rated " + stars + " (" + std::to_string(rating) + "/5)"));
+
+    poco_debug_f2(_logger, "Rated preset %?d/5: %s", rating, path);
+}
+
+void RenderLoop::QuickFavoriteCurrentPreset()
+{
+    auto* presetName = projectm_playlist_item(_playlistHandle, projectm_playlist_get_position(_playlistHandle));
+    if (!presetName)
+    {
+        return;
+    }
+
+    std::string path(presetName);
+    projectm_playlist_free_string(presetName);
+
+    if (_playlistManager.AddPreset("Favorites", path))
+    {
+        Poco::Path p(path);
+        Poco::NotificationCenter::defaultCenter().postNotification(
+            new DisplayToastNotification("Added to Favorites: " + p.getFileName()));
+        poco_debug_f1(_logger, "Added to Favorites: %s", path);
+    }
+    else
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(
+            new DisplayToastNotification("Already in Favorites"));
+    }
 }

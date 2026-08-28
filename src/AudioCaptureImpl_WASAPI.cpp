@@ -132,6 +132,11 @@ void AudioCaptureImpl::FillBuffer()
     }
 }
 
+float AudioCaptureImpl::CurrentAudioLevel() const
+{
+    return -1.0f;
+}
+
 HRESULT AudioCaptureImpl::QueryInterface(const IID& riid, void** ppvObject)
 {
     if (ppvObject == nullptr)

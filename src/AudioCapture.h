@@ -59,6 +59,12 @@ public:
      */
     void FillBuffer();
 
+    /**
+     * @brief Returns the current audio peak level (0.0-1.0) for display.
+     * @return The current audio level, or -1.0 if not available.
+     */
+    float CurrentAudioLevel() const;
+
 protected:
     /**
      * @brief Prints a list of available audio devices on standard output if requested by the user.

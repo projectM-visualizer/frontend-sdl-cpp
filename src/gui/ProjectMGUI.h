@@ -3,6 +3,7 @@
 #include "AboutWindow.h"
 #include "HelpWindow.h"
 #include "MainMenu.h"
+#include "PresetSelection.h"
 #include "SettingsWindow.h"
 #include "ToastMessage.h"
 
@@ -12,6 +13,8 @@
 
 #include <Poco/Logger.h>
 #include <Poco/NObserver.h>
+
+#include <memory>
 
 #include <Poco/Util/Subsystem.h>
 
@@ -58,9 +61,10 @@ public:
 
     /**
      * @brief Draws the UI, including toasts.
-     * If neither a toast nor the UI are visible, this is basically a no-op.
+     * If neither a toast nor the UI nor the audio level indicator are visible, this is basically a no-op.
+     * @param audioLevel Current audio peak level (0.0-1.0), or -1.0 to hide the indicator.
      */
-    void Draw();
+    void Draw(float audioLevel = -1.0f);
 
     /**
      * @brief Tells the caller whether the UI currently wants the keyboard input.
@@ -104,6 +108,11 @@ public:
      */
     void ShowHelpWindow();
 
+    /**
+     * @brief Displays the playlist browser window.
+     */
+    void ShowPlaylistBrowser();
+
 private:
     float GetScalingFactor();
 
@@ -131,6 +140,7 @@ private:
     SettingsWindow _settingsWindow{*this}; //!< The settings window.
     AboutWindow _aboutWindow{*this}; //!< The about window.
     HelpWindow _helpWindow; //!< Help window with shortcuts and tips.
+    std::unique_ptr<PresetSelection> _presetSelection; //!< The playlist browser window.
 
     std::unique_ptr<ToastMessage> _toast; //!< Current toast to be displayed.
 

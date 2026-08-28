@@ -85,6 +85,12 @@ public:
     void FillBuffer();
 
     /**
+     * @brief Returns the current audio peak level.
+     * @return A value between 0.0 and 1.0, or -1.0 if not available.
+     */
+    float CurrentAudioLevel() const;
+
+    /**
      * @brief Converts a widechar/unicode string to a UTF-8-encoded string
      * @param unicodeString A pointer to a widechar string
      * @return The converted string in UTF-8 encoding.

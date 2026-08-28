@@ -10,6 +10,10 @@ add_executable(projectMSDL WIN32 MACOSX_BUNDLE
         AudioCapture.h
         FPSLimiter.cpp
         FPSLimiter.h
+        PlaylistManager.cpp
+        PlaylistManager.h
+        PresetRatings.cpp
+        PresetRatings.h
         ProjectMSDLApplication.cpp
         ProjectMSDLApplication.h
         ProjectMWrapper.cpp

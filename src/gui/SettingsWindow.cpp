@@ -92,6 +92,10 @@ void SettingsWindow::DrawProjectMSettingsTab()
             PathSetting("projectM.presetPath");
 
             ImGui::TableNextRow();
+            LabelWithTooltip("Save Preset Path", "Path where presets will be saved when pressing 's'.");
+            PathSetting("application.savePresetsPath");
+
+            ImGui::TableNextRow();
             LabelWithTooltip("Texture Path", "Path to search for texture/image files requested by presets.");
             PathSetting("projectM.texturePath");
 
