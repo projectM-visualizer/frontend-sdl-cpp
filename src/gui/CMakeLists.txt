@@ -18,15 +18,28 @@ add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/LiberationSansFont.h"
         MAIN_DEPENDENCY "${CMAKE_SOURCE_DIR}/src/resources/LiberationSans-Regular.ttf"
         )
 
+add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/FontAwesomeIconsRegular7.h"
+        COMMAND ${BINARY_TO_COMPRESSED_EXECUTABLE} "${CMAKE_SOURCE_DIR}/src/resources/fa-regular-400.ttf" FontAwesomeIconsRegular7 > "${CMAKE_CURRENT_BINARY_DIR}/FontAwesomeIconsRegular7.h"
+        MAIN_DEPENDENCY "${CMAKE_SOURCE_DIR}/src/resources/fa-regular-400.ttf"
+        )
+
+add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/FontAwesomeIconsSolid7.h"
+        COMMAND ${BINARY_TO_COMPRESSED_EXECUTABLE} "${CMAKE_SOURCE_DIR}/src/resources/fa-solid-900.ttf" FontAwesomeIconsSolid7 > "${CMAKE_CURRENT_BINARY_DIR}/FontAwesomeIconsSolid7.h"
+        MAIN_DEPENDENCY "${CMAKE_SOURCE_DIR}/src/resources/fa-solid-900.ttf"
+        )
+
 add_library(ProjectMSDL-GUI STATIC
         "${CMAKE_CURRENT_BINARY_DIR}/AnonymousProFont.h"
         "${CMAKE_CURRENT_BINARY_DIR}/LiberationSansFont.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/FontAwesomeIconsRegular7.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/FontAwesomeIconsSolid7.h"
         AboutWindow.cpp
         AboutWindow.h
         FileChooser.cpp
         FileChooser.h
         HelpWindow.cpp
         HelpWindow.h
+        IconsFontAwesome7.h
         MainMenu.cpp
         MainMenu.h
         PresetSelection.cpp
@@ -54,9 +67,11 @@ target_include_directories(ProjectMSDL-GUI
 
 target_link_libraries(ProjectMSDL-GUI
         PUBLIC
+        PresetEditor
         Poco::Util
         ImGui
         libprojectM::projectM
         "$<$<PLATFORM_ID:Darwin>:-framework ApplicationServices>"
         )
 
+add_subdirectory(preset_editor)

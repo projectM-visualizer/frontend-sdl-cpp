@@ -1,9 +1,18 @@
 #include "ProjectMGUI.h"
 
-#include "AnonymousProFont.h"
-#include "LiberationSansFont.h"
 #include "ProjectMWrapper.h"
 #include "SDLRenderingWindow.h"
+
+#include "AboutWindow.h"
+#include "AnonymousProFont.h"
+#include "FontAwesomeIconsRegular7.h"
+#include "FontAwesomeIconsSolid7.h"
+#include "HelpWindow.h"
+#include "LiberationSansFont.h"
+#include "MainMenu.h"
+#include "PresetEditorGUI.h"
+#include "SettingsWindow.h"
+#include "ToastMessage.h"
 
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -14,6 +23,17 @@
 #include <Poco/Util/Application.h>
 
 #include <utility>
+
+ProjectMGUI::ProjectMGUI()
+    : _mainMenu(std::make_unique<MainMenu>(*this))
+    , _presetEditorGUI(std::make_unique<Editor::PresetEditorGUI>(*this))
+    , _settingsWindow(std::make_unique<SettingsWindow>(*this))
+    , _aboutWindow(std::make_unique<AboutWindow>(*this))
+    , _helpWindow(std::make_unique<HelpWindow>())
+{
+}
+
+ProjectMGUI::~ProjectMGUI() = default;
 
 const char* ProjectMGUI::name() const
 {
@@ -90,12 +110,20 @@ void ProjectMGUI::UpdateFontSize()
 
     _textScalingFactor = newScalingFactor;
 
-    ImFontConfig config;
-    config.MergeMode = true;
-
     io.Fonts->Clear();
-    _uiFont = io.Fonts->AddFontFromMemoryCompressedTTF(&AnonymousPro_compressed_data, AnonymousPro_compressed_size, floor(24.0f * _textScalingFactor));
-    _toastFont = io.Fonts->AddFontFromMemoryCompressedTTF(&LiberationSans_compressed_data, LiberationSans_compressed_size, floor(40.0f * _textScalingFactor));
+
+    ImFontConfig configMainFont;
+    configMainFont.MergeMode = false;
+
+    ImFontConfig configIconFont;
+    configIconFont.MergeMode = true;
+    configIconFont.GlyphMinAdvanceX = floor(24.0f * _textScalingFactor);
+
+    _uiFont = io.Fonts->AddFontFromMemoryCompressedTTF(&AnonymousPro_compressed_data, AnonymousPro_compressed_size, floor(24.0f * _textScalingFactor), &configMainFont);
+    io.Fonts->AddFontFromMemoryCompressedTTF(&FontAwesomeIconsSolid7_compressed_data, FontAwesomeIconsSolid7_compressed_size, floor(24.0f * _textScalingFactor), &configIconFont);
+    io.Fonts->AddFontFromMemoryCompressedTTF(&FontAwesomeIconsRegular7_compressed_data, FontAwesomeIconsRegular7_compressed_size, floor(24.0f * _textScalingFactor), &configIconFont);
+
+    _toastFont = io.Fonts->AddFontFromMemoryCompressedTTF(&LiberationSans_compressed_data, LiberationSans_compressed_size, floor(40.0f * _textScalingFactor), &configMainFont);
     io.Fonts->Build();
 
     ImGui::GetStyle().ScaleAllSizes(1.0);
@@ -160,10 +188,13 @@ void ProjectMGUI::Draw()
 
     if (_visible)
     {
-        _mainMenu.Draw();
-        _settingsWindow.Draw();
-        _aboutWindow.Draw();
-        _helpWindow.Draw();
+        if (!_presetEditorGUI->Draw())
+        {
+            _mainMenu->Draw();
+            _settingsWindow->Draw();
+            _aboutWindow->Draw();
+            _helpWindow->Draw();
+        }
     }
 
     ImGui::Render();
@@ -192,24 +223,39 @@ void ProjectMGUI::PushUIFont()
     ImGui::PushFont(_uiFont);
 }
 
+void ProjectMGUI::PushSolidIconsFont()
+{
+    ImGui::PushFont(_fontAwesomeIconsSolid);
+}
+
+void ProjectMGUI::PushRegularIconsFont()
+{
+    ImGui::PushFont(_fontAwesomeIconsRegular);
+}
+
 void ProjectMGUI::PopFont()
 {
     ImGui::PopFont();
 }
 
+void ProjectMGUI::ShowPresetEditor(const std::string& presetFileName)
+{
+    _presetEditorGUI->Show(presetFileName);
+}
+
 void ProjectMGUI::ShowSettingsWindow()
 {
-    _settingsWindow.Show();
+    _settingsWindow->Show();
 }
 
 void ProjectMGUI::ShowAboutWindow()
 {
-    _aboutWindow.Show();
+    _aboutWindow->Show();
 }
 
 void ProjectMGUI::ShowHelpWindow()
 {
-    _helpWindow.Show();
+    _helpWindow->Show();
 }
 
 float ProjectMGUI::GetScalingFactor()
