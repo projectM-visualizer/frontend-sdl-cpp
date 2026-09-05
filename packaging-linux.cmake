@@ -20,7 +20,7 @@ set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "A standalone, Milkdrop-like audio visualiz
 set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
 # Require SDL2 2.0.16 or higher, lower versions can't use monitor devices (SDL2 only)
 if(USE_SDL3)
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgl1, libfreetype6")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsdl3, libgl1, libfreetype6")
 else()
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsdl2-2.0-0 (>=2.0.16), libgl1, libfreetype6")
 endif()
