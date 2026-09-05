@@ -277,25 +277,6 @@ jobs:
             brew install sdl3 ninja googletest poco
           fi
 
-      - name: Checkout SDL3 Sources
-        if: matrix.sdl_version == 'SDL3'
-        uses: actions/checkout@v6
-        with:
-          repository: libsdl-org/SDL
-          path: sdl3
-          ref: 'main'
-          submodules: recursive
-
-      - name: Build/Install SDL3
-        if: matrix.sdl_version == 'SDL3'
-        run: |
-          mkdir cmake-build-sdl3
-          cmake -G Ninja -S sdl3 -B cmake-build-sdl3 \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install-sdl3
-          cmake --build cmake-build-sdl3 --parallel
-          cmake --install ${{ github.workspace }}/cmake-build-sdl3
 
       - name: Checkout libprojectM Sources
         uses: actions/checkout@v6
