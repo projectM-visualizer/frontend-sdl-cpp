@@ -188,7 +188,7 @@ jobs:
 
   build-windows:
     name: Windows ${{ matrix.sdl_version }}, x64
-    runs-on: windows-2022
+    runs-on: windows-latest
     strategy:
       matrix:
         sdl_version: [SDL2, SDL3]
