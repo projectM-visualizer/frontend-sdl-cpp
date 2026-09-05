@@ -247,7 +247,7 @@ jobs:
       - name: Build projectMSDL
         run: |
           mkdir cmake-build-frontend
-          cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/frontend-sdl-cpp" -B "${{ github.workspace }}/cmake-build-frontend" -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static  -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend" -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" -DCMAKE_VERBOSE_MAKEFILE=YES -DSDL_LINKAGE=static -DBUILD_TESTING=YES -DUSE_SDL=${{ matrix.sdl_version }}
+          cmake -G "Visual Studio 18 2026" -A "X64" -S "${{ github.workspace }}/frontend-sdl-cpp" -B "${{ github.workspace }}/cmake-build-frontend" -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static  -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend" -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" -DCMAKE_VERBOSE_MAKEFILE=YES -DSDL_LINKAGE=static -DBUILD_TESTING=YES -DUSE_SDL=${{ matrix.sdl_version }}
           cmake --build "${{ github.workspace }}/cmake-build-frontend" --parallel --config Release
 
       - name: Package projectMSDL
