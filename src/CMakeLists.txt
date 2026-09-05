@@ -51,6 +51,36 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
             PRIVATE
             AUDIO_IMPL_HEADER="AudioCaptureImpl_WASAPI.h"
             )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # macOS selects its audio backend at runtime (see AudioCaptureImpl_macOS): the
+    # native Core Audio process tap on macOS 14.4+ (captures system output directly,
+    # no virtual loopback driver needed), falling back to the shared SDL microphone
+    # capture on older systems.
+    target_sources(projectMSDL
+            PRIVATE
+            AudioCaptureImpl_macOS.h
+            AudioCaptureImpl_macOS.mm
+            AudioCaptureImpl_CoreAudioTap.h
+            AudioCaptureImpl_CoreAudioTap.mm
+            AudioCaptureImpl_SDL.h
+            AudioCaptureImpl_SDL.cpp
+            )
+    # Compile the shared SDL backend a second time under a distinct class name so it
+    # can coexist with the Core Audio tap in the same binary. Leaves the SDL sources
+    # themselves untouched for the Linux build.
+    set_source_files_properties(AudioCaptureImpl_SDL.cpp PROPERTIES
+            COMPILE_DEFINITIONS "AudioCaptureImpl=SdlAudioCapture"
+            )
+    target_compile_definitions(projectMSDL
+            PRIVATE
+            AUDIO_IMPL_HEADER="AudioCaptureImpl_macOS.h"
+            )
+    target_link_libraries(projectMSDL
+            PRIVATE
+            "-framework CoreAudio"
+            "-framework AudioToolbox"
+            "-framework Foundation"
+            )
 else ()
     target_sources(projectMSDL
             PRIVATE

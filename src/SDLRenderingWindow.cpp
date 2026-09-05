@@ -311,6 +311,8 @@ void SDLRenderingWindow::CreateSDLWindow()
         SDL_SetWindowPosition(_renderingWindow, left, top);
     }
 #else
+	SDL_SetHint(SDL_HINT_APP_NAME, "projectM");
+	
     _renderingWindow = SDL_CreateWindow("projectM", left, top, width, height,
                                         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 #endif

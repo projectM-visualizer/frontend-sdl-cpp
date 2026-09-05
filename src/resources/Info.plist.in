@@ -26,5 +26,7 @@
     <true/>
     <key>NSMicrophoneUsageDescription</key>
     <string>projectM requires microphone access to visualize audio input.</string>
+    <key>NSAudioCaptureUsageDescription</key>
+    <string>projectM captures system audio output so it can visualize whatever is playing on your Mac.</string>
 </dict>
 </plist>
