@@ -302,9 +302,6 @@ jobs:
         env:
           CMAKE_PREFIX_PATH: "${{ github.workspace }}/install-libprojectm"
         run: |
-          if [ "${{ matrix.sdl_version }}" = "SDL3" ]; then
-            CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH};${{ github.workspace }}/install-sdl3"
-          fi
           mkdir cmake-build-frontend
           cmake -G Ninja -S "${{ github.workspace }}/frontend-sdl-cpp" -B "${{ github.workspace }}/cmake-build-frontend" -DCMAKE_BUILD_TYPE=Release "-DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend" -DUSE_SDL=${{ matrix.sdl_version }}
           cmake --build "${{ github.workspace }}/cmake-build-frontend" --parallel
