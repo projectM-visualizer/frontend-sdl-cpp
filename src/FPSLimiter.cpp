@@ -1,6 +1,10 @@
 #include "FPSLimiter.h"
 
-#include <SDL2/SDL.h>
+#ifdef USE_SDL3
+# include <SDL3/SDL.h>
+#else
+# include <SDL2/SDL.h>
+#endif
 
 void FPSLimiter::TargetFPS(int fps)
 {
@@ -43,7 +47,7 @@ void FPSLimiter::StartFrame()
 
 void FPSLimiter::EndFrame()
 {
-    uint32_t frameTime = SDL_GetTicks() - _lastTickCount;
+    uint64_t frameTime = SDL_GetTicks() - _lastTickCount;
 
     if (_targetFrameTime && frameTime < _targetFrameTime)
     {

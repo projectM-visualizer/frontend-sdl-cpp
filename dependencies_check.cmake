@@ -2,8 +2,14 @@ if(projectM4_VERSION VERSION_LESS 4.0.0)
     message(FATAL_ERROR "libprojectM version 4.0.0 or higher is required. Version found: ${projectM4_VERSION}.")
 endif()
 
-if(SDL2_VERSION VERSION_LESS 2.0.5)
-    message(FATAL_ERROR "libSDL version 2.0.5 or higher is required. Version found: ${SDL2_VERSION}.")
+if(USE_SDL3)
+    if(SDL3_VERSION VERSION_LESS 3.0.0)
+        message(FATAL_ERROR "libSDL3 version 3.0.0 or higher is required. Version found: ${SDL3_VERSION}.")
+    endif()
+else()
+    if(SDL2_VERSION VERSION_LESS 2.0.5)
+        message(FATAL_ERROR "libSDL2 version 2.0.5 or higher is required. Version found: ${SDL2_VERSION}.")
+    endif()
 endif()
 
 if(Poco_VERSION VERSION_LESS 1.11.2 AND Poco_VERSION VERSION_GREATER_EQUAL 1.10.0)
@@ -14,7 +20,7 @@ See https://github.com/pocoproject/poco/issues/3507 for details on this particul
 ")
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND SDL2_VERSION VERSION_LESS 2.0.16)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT USE_SDL3 AND SDL2_VERSION VERSION_LESS 2.0.16)
     message(AUTHOR_WARNING
             "NOTE: libSDL 2.0.15 and lower do not support capture from PulseAudio \"monitor\" devices.\n"
             "It is highly recommended to use at least version 2.0.16!"

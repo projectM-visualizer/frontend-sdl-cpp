@@ -132,6 +132,16 @@ void AudioCaptureImpl::FillBuffer()
     }
 }
 
+float AudioCaptureImpl::CurrentAudioLevel() const
+{
+    return -1.0f;
+}
+
+void AudioCaptureImpl::RefreshDeviceList()
+{
+    // Device list is re-enumerated on next AudioDeviceList() call.
+}
+
 HRESULT AudioCaptureImpl::QueryInterface(const IID& riid, void** ppvObject)
 {
     if (ppvObject == nullptr)

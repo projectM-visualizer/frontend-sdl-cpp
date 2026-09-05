@@ -2,7 +2,6 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
     "glew",
-    "sdl2",
     {
       "name": "poco",
       "features": [
@@ -11,5 +10,19 @@
     },
     "projectm",
     "freetype"
-  ]
+  ],
+  "features": {
+    "sdl2": {
+      "description": "Build against SDL2",
+      "dependencies": [
+        "sdl2"
+      ]
+    },
+    "sdl3": {
+      "description": "Build against SDL3",
+      "dependencies": [
+        "sdl3"
+      ]
+    }
+  }
 }

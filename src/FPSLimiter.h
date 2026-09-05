@@ -39,7 +39,7 @@ public:
 
 protected:
 
-    uint32_t _lastTickCount{ 0 }; //!< Last SDL tick count, when a new frame was started.
+    uint64_t _lastTickCount{ 0 }; //!< Last SDL tick count, when a new frame was started.
     uint32_t _targetFrameTime{ 0 }; //!< Targeted time per frame in milliseconds.
     uint32_t _lastFrameTimes[10]{}; //!< Actual tick time of the last ten frames, including limiting delay.
     int _nextFrameTimesOffset{ 0 }; //!< Next offset to overwrite the _lastFrameTimes ring buffer.

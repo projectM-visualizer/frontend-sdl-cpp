@@ -12,11 +12,19 @@
 #include <GL/glew.h>
 #endif
 
-#include <SDL2/SDL_opengl.h>
+#ifdef USE_SDL3
+# include <SDL3/SDL_opengl.h>
+#else
+# include <SDL2/SDL_opengl.h>
+#endif
 
 const char* SDLRenderingWindow::name() const
 {
+#ifdef USE_SDL3
+    return "SDL3 Rendering Window";
+#else
     return "SDL2 Rendering Window";
+#endif
 }
 
 void SDLRenderingWindow::initialize(Poco::Util::Application& app)
@@ -52,7 +60,11 @@ void SDLRenderingWindow::uninitialize()
 
 void SDLRenderingWindow::GetDrawableSize(int& width, int& height) const
 {
+#ifdef USE_SDL3
+    SDL_GetWindowSizeInPixels(_renderingWindow, &width, &height);
+#else
     SDL_GL_GetDrawableSize(_renderingWindow, &width, &height);
+#endif
 }
 
 void SDLRenderingWindow::Swap() const
@@ -75,7 +87,11 @@ void SDLRenderingWindow::ToggleFullscreen()
 void SDLRenderingWindow::Fullscreen()
 {
     SDL_GetWindowSize(_renderingWindow, &_lastWindowWidth, &_lastWindowHeight);
-    SDL_ShowCursor(false);
+#ifdef USE_SDL3
+    SDL_HideCursor();
+#else
+    SDL_ShowCursor(SDL_DISABLE);
+#endif
     if (_config->getBool("fullscreen.exclusiveMode", false))
     {
         int fullscreenWidth = _config->getInt("fullscreen.width", 0);
@@ -85,7 +101,11 @@ void SDLRenderingWindow::Fullscreen()
             SDL_RestoreWindow(_renderingWindow);
             SDL_SetWindowSize(_renderingWindow, fullscreenWidth, fullscreenHeight);
         }
+#ifdef USE_SDL3
+        SDL_SetWindowFullscreen(_renderingWindow, true);
+#else
         SDL_SetWindowFullscreen(_renderingWindow, SDL_WINDOW_FULLSCREEN);
+#endif
         if (_logger.debug())
         {
             int width{0};
@@ -97,7 +117,11 @@ void SDLRenderingWindow::Fullscreen()
     }
     else
     {
+#ifdef USE_SDL3
+        SDL_SetWindowFullscreen(_renderingWindow, true);
+#else
         SDL_SetWindowFullscreen(_renderingWindow, SDL_WINDOW_FULLSCREEN_DESKTOP);
+#endif
         if (_logger.debug())
         {
             int width{0};
@@ -113,12 +137,21 @@ void SDLRenderingWindow::Fullscreen()
 
 void SDLRenderingWindow::Windowed()
 {
+#ifdef USE_SDL3
+    SDL_SetWindowFullscreen(_renderingWindow, false);
+    SDL_SetWindowBordered(_renderingWindow, _config->getBool("borderless", false) ? false : true);
+#else
     SDL_SetWindowFullscreen(_renderingWindow, 0);
     SDL_SetWindowBordered(_renderingWindow, _config->getBool("borderless", false) ? SDL_FALSE : SDL_TRUE);
+#endif
     if (_lastWindowWidth > 0 && _lastWindowHeight > 0)
     {
         SDL_SetWindowSize(_renderingWindow, _lastWindowWidth, _lastWindowHeight);
-        SDL_ShowCursor(true);
+#ifdef USE_SDL3
+        SDL_ShowCursor();
+#else
+        SDL_ShowCursor(SDL_ENABLE);
+#endif
 
         poco_debug_f2(_logger, "Entered windowed mode with size %dx%d",
                       _lastWindowWidth, _lastWindowHeight);
@@ -129,12 +162,28 @@ void SDLRenderingWindow::Windowed()
 
 void SDLRenderingWindow::ShowCursor(bool visible)
 {
-    SDL_ShowCursor(visible);
+#ifdef USE_SDL3
+    if (visible)
+    {
+        SDL_ShowCursor();
+    }
+    else
+    {
+        SDL_HideCursor();
+    }
+#else
+    SDL_ShowCursor(visible ? SDL_ENABLE : SDL_DISABLE);
+#endif
 }
 
 void SDLRenderingWindow::NextDisplay()
 {
+#ifdef USE_SDL3
+    int numDisplays;
+    SDL_GetDisplays(&numDisplays);
+#else
     auto numDisplays = SDL_GetNumVideoDisplays();
+#endif
 
     if (numDisplays < 2)
     {
@@ -214,7 +263,12 @@ void SDLRenderingWindow::CreateSDLWindow()
     if (display > 0)
     {
         poco_debug_f1(_logger, "User requested to place window on monitor %?d.", display);
+#ifdef USE_SDL3
+        int numDisplays;
+        SDL_GetDisplays(&numDisplays);
+#else
         auto numDisplays = SDL_GetNumVideoDisplays();
+#endif
         if (display > numDisplays)
         {
             display = numDisplays;
@@ -249,10 +303,19 @@ void SDLRenderingWindow::CreateSDLWindow()
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
+#ifdef USE_SDL3
+    _renderingWindow = SDL_CreateWindow("projectM", width, height,
+                                        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    if (_renderingWindow)
+    {
+        SDL_SetWindowPosition(_renderingWindow, left, top);
+    }
+#else
 	SDL_SetHint(SDL_HINT_APP_NAME, "projectM");
 	
     _renderingWindow = SDL_CreateWindow("projectM", left, top, width, height,
                                         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+#endif
     if (!_renderingWindow)
     {
         auto errorMessage = "Could not create SDL rendering window. Error: " + std::string(SDL_GetError());
@@ -303,7 +366,11 @@ void SDLRenderingWindow::DestroySDLWindow()
 {
     poco_debug(_logger, "Closing rendering window and destroying OpenGL context.");
 
+#ifdef USE_SDL3
+    SDL_GL_DestroyContext(_glContext);
+#else
     SDL_GL_DeleteContext(_glContext);
+#endif
     _glContext = nullptr;
 
     SDL_DestroyWindow(_renderingWindow);
@@ -327,7 +394,12 @@ int SDLRenderingWindow::GetCurrentDisplay()
 
     SDL_GetWindowPosition(_renderingWindow, &left, &top);
 
+#ifdef USE_SDL3
+    int numDisplays = 0;
+    SDL_GetDisplays(&numDisplays);
+#else
     auto numDisplays = SDL_GetNumVideoDisplays();
+#endif
 
     poco_debug_f1(_logger, "Displays available: %?d.", numDisplays);
     poco_debug_f2(_logger, "Window position is X=%?d Y=%?d", left, top);
@@ -455,7 +527,11 @@ void SDLRenderingWindow::OnConfigurationPropertyRemoved(const std::string& key)
 
     if (key == "window.borderless")
     {
+#ifdef USE_SDL3
+        SDL_SetWindowBordered(_renderingWindow, _config->getBool("borderless", false) ? false : true);
+#else
         SDL_SetWindowBordered(_renderingWindow, _config->getBool("borderless", false) ? SDL_FALSE : SDL_TRUE);
+#endif
     }
 
     if (key == "window.displayPresetNameInTitle")

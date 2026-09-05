@@ -6,6 +6,21 @@ set(CMAKE_POSITION_INDEPENDENT_CODE YES)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# === SDL version selection ===
+# Declared before project() so that the vcpkg toolchain can enable the matching
+# manifest feature when building in manifest mode.
+set(USE_SDL "Auto" CACHE STRING "Which SDL version to use: Auto (prefer SDL3, fall back to SDL2), SDL2, or SDL3")
+set_property(CACHE USE_SDL PROPERTY STRINGS "Auto" "SDL2" "SDL3")
+
+# Select the vcpkg manifest feature matching the requested SDL version. This only
+# has an effect when building in vcpkg manifest mode. Auto prefers SDL3 so that
+# vcpkg installs libSDL3 instead of libSDL2.
+if(USE_SDL STREQUAL "SDL2")
+    set(VCPKG_MANIFEST_FEATURES "sdl2")
+else()
+    set(VCPKG_MANIFEST_FEATURES "sdl3")
+endif()
+
 project(projectMSDL
         LANGUAGES C CXX
         VERSION 2.0.0
@@ -83,21 +98,48 @@ endif()
 
 set(PACKAGING_CONFIG_FILE "${DEFAULT_PACKAGING_CONFIG}" CACHE FILEPATH "CPack configuration file to use for packaging. This file must \"include(CPack)\" at the end to work properly.")
 
-set(SDL2_LINKAGE "shared" CACHE STRING "Set to either shared or static to specify how libSDL2 should be linked. Defaults to shared.")
 option(ENABLE_FREETYPE "Use the Freetype font rendering library instead of the built-in stb_truetype if available" ON)
-
 
 set(PRESET_DIRS "" CACHE STRING "List of paths with presets. Will be installed in \"presets\" ")
 set(TEXTURE_DIRS "" CACHE STRING "List of paths with presets.")
 
-if(NOT SDL2_LINKAGE STREQUAL "shared" AND NOT SDL2_LINKAGE STREQUAL "static")
-    message(FATAL_ERROR "Invalid libSDL2 linkage provided in SDL2_LINKAGE: \"${SDL2_LINKAGE}\".\n"
-            "Please specify either \"shared\" or \"static\"."
-            )
+find_package(projectM4 REQUIRED COMPONENTS Playlist)
+
+# --- Resolve SDL version ---
+if(USE_SDL STREQUAL "Auto")
+    find_package(SDL3 QUIET)
+    if(SDL3_FOUND)
+        set(USE_SDL SDL3)
+    else()
+        set(USE_SDL SDL2)
+    endif()
 endif()
 
-find_package(projectM4 REQUIRED COMPONENTS Playlist)
-find_package(SDL2 REQUIRED)
+if(USE_SDL STREQUAL "SDL3")
+    find_package(SDL3 REQUIRED)
+    set(USE_SDL3 ON)
+    set(SDL_VERSION "${SDL3_VERSION}")
+    message(STATUS "Using SDL3 (found ${SDL3_VERSION})")
+elseif(USE_SDL STREQUAL "SDL2")
+    find_package(SDL2 REQUIRED)
+    set(SDL_VERSION "${SDL2_VERSION}")
+    message(STATUS "Using SDL2 (found ${SDL2_VERSION})")
+else()
+   message(FATAL_ERROR "USE_SDL was not set to Auto, SDL2 or SDL3: ${USE_SDL}")
+endif()
+
+# --- SDL linkage type ---
+set(SDL_LINKAGE "shared" CACHE STRING "Set to either shared or static to specify how lib${USE_SDL} should be linked. Defaults to shared.")
+if(NOT SDL_LINKAGE STREQUAL "shared" AND NOT SDL_LINKAGE STREQUAL "static")
+    message(FATAL_ERROR "Invalid lib${USE_SDL} linkage: \"${SDL_LINKAGE}\". Please specify \"shared\" or \"static\".")
+endif()
+include(${USE_SDL}Target)
+
+# --- Propagate SDL version to all targets ---
+if(USE_SDL3)
+    add_compile_definitions(USE_SDL3)
+endif()
+
 if (NOT ENABLE_GLES)
     find_package(OpenGL REQUIRED)
 else ()
@@ -117,7 +159,6 @@ if(ENABLE_FREETYPE)
     find_package(Freetype)
 endif()
 
-include(SDL2Target)
 include(dependencies_check.cmake)
 include(ImGui.cmake)
 
@@ -133,7 +174,11 @@ if(NOT PACKAGING_CONFIG_FILE STREQUAL "")
     include(${PACKAGING_CONFIG_FILE})
 endif()
 
-message(STATUS "SDL version: ${SDL2_VERSION}")
+if(USE_SDL3)
+    message(STATUS "SDL version: ${SDL3_VERSION} (SDL3)")
+else()
+    message(STATUS "SDL version: ${SDL2_VERSION} (SDL2)")
+endif()
 message(STATUS "Poco version: ${Poco_VERSION}")
 message(STATUS "projectM version: ${projectM4_VERSION}")
 if(Freetype_FOUND)

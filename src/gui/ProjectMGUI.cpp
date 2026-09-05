@@ -7,8 +7,13 @@
 
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
+#ifdef USE_SDL3
+#include "imgui_impl_sdl3.h"
+#else
 #include "imgui_impl_sdl2.h"
+#endif
 
+#include <cmath>
 #include <Poco/NotificationCenter.h>
 
 #include <Poco/Util/Application.h>
@@ -42,8 +47,13 @@ void ProjectMGUI::initialize(Poco::Util::Application& app)
     _renderingWindow = renderingWindow.GetRenderingWindow();
     _glContext = renderingWindow.GetGlContext();
 
+#ifdef USE_SDL3
+    ImGui_ImplSDL3_InitForOpenGL(_renderingWindow, _glContext);
+    ImGui_ImplOpenGL3_Init("#version 300 es");
+#else
     ImGui_ImplSDL2_InitForOpenGL(_renderingWindow, _glContext);
     ImGui_ImplOpenGL3_Init("#version 150");
+#endif
 
     UpdateFontSize();
 
@@ -59,7 +69,11 @@ void ProjectMGUI::uninitialize()
     Poco::NotificationCenter::defaultCenter().removeObserver(_displayToastNotificationObserver);
 
     ImGui_ImplOpenGL3_Shutdown();
+#ifdef USE_SDL3
+    ImGui_ImplSDL3_Shutdown();
+#else
     ImGui_ImplSDL2_Shutdown();
+#endif
     ImGui::DestroyContext();
 
     _projectMWrapper = nullptr;
@@ -71,7 +85,11 @@ void ProjectMGUI::UpdateFontSize()
 {
     ImGuiIO& io = ImGui::GetIO();
 
+#ifdef USE_SDL3
+    auto displayIndex = SDL_GetDisplayForWindow(_renderingWindow);
+#else
     auto displayIndex = SDL_GetWindowDisplayIndex(_renderingWindow);
+#endif
     if (displayIndex < 0)
     {
         poco_debug_f1(_logger, "Could not get display index for application window: %s", std::string(SDL_GetError()));
@@ -103,7 +121,11 @@ void ProjectMGUI::UpdateFontSize()
 
 void ProjectMGUI::ProcessInput(const SDL_Event& event)
 {
+#ifdef USE_SDL3
+    ImGui_ImplSDL3_ProcessEvent(&event);
+#else
     ImGui_ImplSDL2_ProcessEvent(&event);
+#endif
 }
 
 void ProjectMGUI::Toggle()
@@ -134,18 +156,30 @@ void ProjectMGUI::Draw()
         UpdateFontSize();
     }
 
+#ifdef USE_SDL3
+    ImGui_ImplSDL3_NewFrame();
+#else
     ImGui_ImplSDL2_NewFrame();
+#endif
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
 
     float secondsSinceLastFrame = .0f;
     if (_lastFrameTicks == 0)
     {
+#ifdef USE_SDL3
+        _lastFrameTicks = SDL_GetTicks();
+#else
         _lastFrameTicks = SDL_GetTicks64();
+#endif
     }
     else
     {
+#ifdef USE_SDL3
+        auto currentFrameTicks = SDL_GetTicks();
+#else
         auto currentFrameTicks = SDL_GetTicks64();
+#endif
         secondsSinceLastFrame = static_cast<float>(currentFrameTicks - _lastFrameTicks) * .001f;
         _lastFrameTicks = currentFrameTicks;
     }
@@ -220,7 +254,11 @@ float ProjectMGUI::GetScalingFactor()
     int renderHeight;
 
     SDL_GetWindowSize(_renderingWindow, &windowWidth, &windowHeight);
+#ifdef USE_SDL3
+    SDL_GetWindowSizeInPixels(_renderingWindow, &renderWidth, &renderHeight);
+#else
     SDL_GL_GetDrawableSize(_renderingWindow, &renderWidth, &renderHeight);
+#endif
 
     _userScalingFactor = GetClampedUserScalingFactor();
 

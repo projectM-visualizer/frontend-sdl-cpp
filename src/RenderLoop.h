@@ -72,6 +72,12 @@ protected:
      */
     void QuitNotificationHandler(const Poco::AutoPtr<QuitNotification>& notification);
 
+    /**
+     * @brief Handles a file drop event, adding the file or directory to the playlist.
+     * @param event The SDL drop event.
+     */
+    void HandleDropFile(const SDL_Event& event);
+
     AudioCapture& _audioCapture;
     ProjectMWrapper& _projectMWrapper;
     SDLRenderingWindow& _sdlRenderingWindow;

@@ -247,11 +247,24 @@ void ProjectMSDLApplication::DisplayHelp(POCO_UNUSED const std::string& name, PO
 {
     Poco::Util::HelpFormatter formatter(options());
 
+#ifdef USE_SDL3
+    struct { int major; int minor; int patch; } sdlBuild;
+    sdlBuild.major = SDL_MAJOR_VERSION;
+    sdlBuild.minor = SDL_MINOR_VERSION;
+    sdlBuild.patch = SDL_MICRO_VERSION;
+
+    struct { int major; int minor; int patch; } sdlLoaded;
+    int loadedVer = SDL_GetVersion();
+    sdlLoaded.major = SDL_VERSIONNUM_MAJOR(loadedVer);
+    sdlLoaded.minor = SDL_VERSIONNUM_MINOR(loadedVer);
+    sdlLoaded.patch = SDL_VERSIONNUM_MICRO(loadedVer);
+#else
     SDL_version sdlBuild;
     SDL_version sdlLoaded;
 
     SDL_VERSION(&sdlBuild);
     SDL_GetVersion(&sdlLoaded);
+#endif
 
     auto* projectMVersion = projectm_get_version_string();
     std::string projectMRuntimeVersion(projectMVersion);

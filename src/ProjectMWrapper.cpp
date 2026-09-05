@@ -9,9 +9,25 @@
 #include <Poco/File.h>
 #include <Poco/NotificationCenter.h>
 
-#include <SDL2/SDL_opengl.h>
+#ifdef USE_SDL3
+# include <SDL3/SDL_opengl.h>
+#else
+# include <SDL2/SDL_opengl.h>
+#endif
 
 #include <cmath>
+
+#if defined(USE_SDL3) && defined(PROJECTM_HAS_OPENGL_LOAD_PROC)
+namespace {
+    /**
+     * @brief OpenGL function loader callback for projectM, using SDL's GL proc resolver.
+     */
+    void* SDLProjectMLoadProc(const char* name, void* /*user_data*/)
+    {
+        return reinterpret_cast<void*>(SDL_GL_GetProcAddress(name));
+    }
+} // anonymous namespace
+#endif
 
 const char* ProjectMWrapper::name() const
 {
@@ -37,7 +53,11 @@ void ProjectMWrapper::initialize(Poco::Util::Application& app)
         auto presetPaths = GetPathListWithDefault("presetPath", app.config().getString("application.dir", ""));
         auto texturePaths = GetPathListWithDefault("texturePath", app.config().getString("", ""));
 
+#if defined(USE_SDL3) && defined(PROJECTM_HAS_OPENGL_LOAD_PROC)
+        _projectM = projectm_create_with_opengl_load_proc(SDLProjectMLoadProc, nullptr);
+#else
         _projectM = projectm_create();
+#endif
         if (!_projectM)
         {
             poco_error(_logger, "Failed to initialize projectM. Possible reasons are a lack of required OpenGL features or GPU resources.");

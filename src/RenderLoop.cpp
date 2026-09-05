@@ -4,11 +4,20 @@
 
 #include "gui/ProjectMGUI.h"
 
+#include "notifications/DisplayToastNotification.h"
+#include "notifications/PlaybackControlNotification.h"
+
 #include <Poco/NotificationCenter.h>
 
 #include <Poco/Util/Application.h>
+#include <Poco/File.h>
+#include <Poco/Path.h>
 
-#include <SDL2/SDL.h>
+#ifdef USE_SDL3
+# include <SDL3/SDL.h>
+#else
+# include <SDL2/SDL.h>
+#endif
 
 #include "ProjectMSDLApplication.h"
 
@@ -67,138 +76,165 @@ void RenderLoop::PollEvents()
 
         switch (event.type)
         {
+#ifdef USE_SDL3
+            case SDL_EVENT_MOUSE_WHEEL:
+#else
             case SDL_MOUSEWHEEL:
-
+#endif
                 if (!_projectMGui.WantsMouseInput())
                 {
                     ScrollEvent(event.wheel);
                 }
-
                 break;
 
+#ifdef USE_SDL3
+            case SDL_EVENT_KEY_DOWN:
+#else
             case SDL_KEYDOWN:
+#endif
                 if (!_projectMGui.WantsKeyboardInput())
                 {
                     KeyEvent(event.key, true);
                 }
                 break;
 
+#ifdef USE_SDL3
+            case SDL_EVENT_KEY_UP:
+#else
             case SDL_KEYUP:
+#endif
                 if (!_projectMGui.WantsKeyboardInput())
                 {
                     KeyEvent(event.key, false);
                 }
                 break;
 
+#ifdef USE_SDL3
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+#else
             case SDL_MOUSEBUTTONDOWN:
+#endif
                 if (!_projectMGui.WantsMouseInput())
                 {
                     MouseDownEvent(event.button);
                 }
-
                 break;
 
+#ifdef USE_SDL3
+            case SDL_EVENT_MOUSE_BUTTON_UP:
+#else
             case SDL_MOUSEBUTTONUP:
+#endif
                 if (!_projectMGui.WantsMouseInput())
                 {
                     MouseUpEvent(event.button);
                 }
-
                 break;
 
-            case SDL_DROPFILE: {
-                char* droppedFilePath = event.drop.file;
+#ifdef USE_SDL3
+            case SDL_EVENT_DROP_FILE:
+#else
+            case SDL_DROPFILE:
+#endif
+                HandleDropFile(event);
+                break;
 
-                // first we want to get the config settings that are relevant ehre
-                // namely skipToDropped and droppedFolderOverride
-                // we can get them from the projectMWrapper, in the _projectMConfigView available on it
-                bool skipToDropped = _userConfig->getBool("projectM.skipToDropped", true);
-                bool droppedFolderOverride = _userConfig->getBool("projectM.droppedFolderOverride", false);
+#ifdef USE_SDL3
+            case SDL_EVENT_QUIT:
+#else
+            case SDL_QUIT:
+#endif
+                _wantsToQuit = true;
+                break;
 
+#ifdef USE_SDL3
+            case SDL_EVENT_AUDIO_DEVICE_ADDED:
+            case SDL_EVENT_AUDIO_DEVICE_REMOVED:
+                _audioCapture.RefreshDeviceList();
+                break;
+#endif
+        }
+    }
+}
 
-                bool shuffle = projectm_playlist_get_shuffle(_playlistHandle);
-                if (shuffle && skipToDropped)
-                {
-                    // if shuffle is enabled, we disable it temporarily, so the dropped preset is played next
-                    // if skipToDropped is false, we also keep shuffle enabled, as it doesn't matter since the current preset is unaffected
-                    projectm_playlist_set_shuffle(_playlistHandle, false);
-                }
+void RenderLoop::HandleDropFile(const SDL_Event& event)
+{
+#ifdef USE_SDL3
+    const char* droppedFilePath = event.drop.data;
+#else
+    char* droppedFilePath = event.drop.file;
+#endif
 
-                int index = projectm_playlist_get_position(_playlistHandle) + 1;
+    bool skipToDropped = _userConfig->getBool("projectM.skipToDropped", true);
+    bool droppedFolderOverride = _userConfig->getBool("projectM.droppedFolderOverride", false);
 
-                do
-                {
-                    Poco::File droppedFile(droppedFilePath);
-                    if (!droppedFile.isDirectory())
-                    {
-                        // handle dropped preset file
-                        Poco::Path droppedFileP(droppedFilePath);
-                        if (!droppedFile.exists() || (droppedFileP.getExtension() != "milk" && droppedFileP.getExtension() != "prjm"))
-                        {
-                            std::string toastMessage = std::string("Invalid preset file: ") + droppedFilePath;
-                            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
-                            poco_information_f1(_logger, "%s", toastMessage);
-                            break; // exit the block and go to the shuffle check
-                        }
+    bool shuffle = projectm_playlist_get_shuffle(_playlistHandle);
+    if (shuffle && skipToDropped)
+    {
+        projectm_playlist_set_shuffle(_playlistHandle, false);
+    }
 
-                        if (projectm_playlist_insert_preset(_playlistHandle, droppedFilePath, index, true))
-                        {
-                            if (skipToDropped)
-                            {
-                                projectm_playlist_play_next(_playlistHandle, true);
-                            }
-                            poco_information_f1(_logger, "Added preset: %s", std::string(droppedFilePath));
-                            // no need to toast single presets, as its obvious if a preset was loaded.
-                        }
-                    }
-                    else
-                    {
-                        // handle dropped directory
+    int index = projectm_playlist_get_position(_playlistHandle) + 1;
 
-                        // if droppedFolderOverride is enabled, we clear the playlist first
-                        // current edge case: if the dropped directory is invalid or contains no presets, then it still clears the playlist
-                        if (droppedFolderOverride)
-                        {
-                            projectm_playlist_clear(_playlistHandle);
-                            index = 0;
-                        }
-
-                        uint32_t addedFilesCount = projectm_playlist_insert_path(_playlistHandle, droppedFilePath, index, true, true);
-                        if (addedFilesCount > 0)
-                        {
-                            std::string toastMessage = "Added " + std::to_string(addedFilesCount) + " presets from " + droppedFilePath;
-                            poco_information_f1(_logger, "%s", toastMessage);
-                            if (skipToDropped || droppedFolderOverride)
-                            {
-                                // if skip to dropped is true, or if a folder was dropped and it overrode the playlist, we skip to the next preset
-                                projectm_playlist_play_next(_playlistHandle, true);
-                            }
-                            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
-                        }
-                        else
-                        {
-                            std::string toastMessage = std::string("No presets found in: ") + droppedFilePath;
-                            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
-                            poco_information_f1(_logger, "%s", toastMessage);
-                        }
-                    }
-                } while (false);
-
-                if (shuffle && skipToDropped)
-                {
-                    projectm_playlist_set_shuffle(_playlistHandle, true);
-                }
-
-                SDL_free(droppedFilePath);
+    do
+    {
+        Poco::File droppedFile(droppedFilePath);
+        if (!droppedFile.isDirectory())
+        {
+            Poco::Path droppedFileP(droppedFilePath);
+            if (!droppedFile.exists() || (droppedFileP.getExtension() != "milk" && droppedFileP.getExtension() != "prjm"))
+            {
+                std::string toastMessage = std::string("Invalid preset file: ") + droppedFilePath;
+                Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
+                poco_information_f1(_logger, "%s", toastMessage);
                 break;
             }
 
-
-            case SDL_QUIT:
-                _wantsToQuit = true;
-                break;
+            if (projectm_playlist_insert_preset(_playlistHandle, droppedFilePath, index, true))
+            {
+                if (skipToDropped)
+                {
+                    projectm_playlist_play_next(_playlistHandle, true);
+                }
+                poco_information_f1(_logger, "Added preset: %s", std::string(droppedFilePath));
+            }
         }
+        else
+        {
+            if (droppedFolderOverride)
+            {
+                projectm_playlist_clear(_playlistHandle);
+                index = 0;
+            }
+
+            uint32_t addedFilesCount = projectm_playlist_insert_path(_playlistHandle, droppedFilePath, index, true, true);
+            if (addedFilesCount > 0)
+            {
+                std::string toastMessage = "Added " + std::to_string(addedFilesCount) + " presets from " + droppedFilePath;
+                poco_information_f1(_logger, "%s", toastMessage);
+                if (skipToDropped || droppedFolderOverride)
+                {
+                    projectm_playlist_play_next(_playlistHandle, true);
+                }
+                Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
+            }
+            else
+            {
+                std::string toastMessage = std::string("No presets found in: ") + droppedFilePath;
+                Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
+                poco_information_f1(_logger, "%s", toastMessage);
+            }
+        }
+    } while (false);
+
+    if (shuffle && skipToDropped)
+    {
+        projectm_playlist_set_shuffle(_playlistHandle, true);
     }
+
+#ifndef USE_SDL3
+    SDL_free(droppedFilePath);
+#endif
 }
 
 void RenderLoop::CheckViewportSize()
@@ -221,6 +257,16 @@ void RenderLoop::CheckViewportSize()
 
 void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
 {
+#ifdef USE_SDL3
+    auto keyModifier{static_cast<SDL_Keymod>(event.mod)};
+    auto keyCode{event.key};
+    bool modifierPressed{false};
+
+    if (keyModifier & SDL_KMOD_LGUI || keyModifier & SDL_KMOD_RGUI || keyModifier & SDL_KMOD_LCTRL)
+    {
+        modifierPressed = true;
+    }
+#else
     auto keyModifier{static_cast<SDL_Keymod>(event.keysym.mod)};
     auto keyCode{event.keysym.sym};
     bool modifierPressed{false};
@@ -229,6 +275,7 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
     {
         modifierPressed = true;
     }
+#endif
 
     // Handle modifier keys and save state for use in other methods, e.g. mouse events
     switch (keyCode)
@@ -264,6 +311,31 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
 
     switch (keyCode)
     {
+#ifdef USE_SDL3
+// SDL3 renamed key constants to uppercase. Remap lowercase to uppercase.
+#undef SDLK_a
+#define SDLK_a SDLK_A
+#undef SDLK_c
+#define SDLK_c SDLK_C
+#undef SDLK_d
+#define SDLK_d SDLK_D
+#undef SDLK_f
+#define SDLK_f SDLK_F
+#undef SDLK_i
+#define SDLK_i SDLK_I
+#undef SDLK_m
+#define SDLK_m SDLK_M
+#undef SDLK_n
+#define SDLK_n SDLK_N
+#undef SDLK_p
+#define SDLK_p SDLK_P
+#undef SDLK_q
+#define SDLK_q SDLK_Q
+#undef SDLK_r
+#define SDLK_r SDLK_R
+#undef SDLK_y
+#define SDLK_y SDLK_Y
+#endif
         case SDLK_ESCAPE:
             _projectMGui.Toggle();
             _sdlRenderingWindow.ShowCursor(_projectMGui.Visible());
@@ -344,12 +416,10 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
             break;
 
         case SDLK_UP:
-            // Increase beat sensitivity
             _projectMWrapper.ChangeBeatSensitivity(0.01f);
             break;
 
         case SDLK_DOWN:
-            // Decrease beat sensitivity
             _projectMWrapper.ChangeBeatSensitivity(-0.01f);
             break;
     }
@@ -357,12 +427,10 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
 
 void RenderLoop::ScrollEvent(const SDL_MouseWheelEvent& event)
 {
-    // Wheel up is positive
     if (event.y > 0)
     {
         projectm_playlist_play_next(_playlistHandle, true);
     }
-    // Wheel down is negative
     else if (event.y < 0)
     {
         projectm_playlist_play_previous(_playlistHandle, true);
@@ -381,9 +449,13 @@ void RenderLoop::MouseDownEvent(const SDL_MouseButtonEvent& event)
         case SDL_BUTTON_LEFT:
             if (!_mouseDown && _keyStates._shiftPressed)
             {
-                // ToDo: Improve this to differentiate between single click (add waveform) and drag (move waveform).
+#ifdef USE_SDL3
+                float x;
+                float y;
+#else
                 int x;
                 int y;
+#endif
                 int width;
                 int height;
 
@@ -391,13 +463,11 @@ void RenderLoop::MouseDownEvent(const SDL_MouseButtonEvent& event)
 
                 SDL_GetMouseState(&x, &y);
 
-                // Scale those coordinates. libProjectM uses a scale of 0..1 instead of absolute pixel coordinates.
                 float scaledX = (static_cast<float>(x) / static_cast<float>(width));
                 float scaledY = (static_cast<float>(height - y) / static_cast<float>(height));
 
-                // Add a new waveform.
                 projectm_touch(_projectMHandle, scaledX, scaledY, 0, PROJECTM_TOUCH_TYPE_RANDOM);
-                poco_debug_f2(_logger, "Added new random waveform at %?d,%?d", x, y);
+                poco_debug_f2(_logger, "Added new random waveform at %?f,%?f", static_cast<float>(x), static_cast<float>(y));
 
                 _mouseDown = true;
             }
