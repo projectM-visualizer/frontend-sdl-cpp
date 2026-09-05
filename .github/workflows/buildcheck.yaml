@@ -274,7 +274,7 @@ jobs:
           if [ "${{ matrix.sdl_version }}" = "SDL2" ]; then
             brew install sdl2 ninja googletest poco
           else
-            brew install ninja googletest poco
+            brew install sdl3 ninja googletest poco
           fi
 
       - name: Checkout SDL3 Sources
