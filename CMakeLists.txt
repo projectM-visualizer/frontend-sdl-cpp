@@ -6,6 +6,21 @@ set(CMAKE_POSITION_INDEPENDENT_CODE YES)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# === SDL version selection ===
+# Declared before project() so that the vcpkg toolchain can enable the matching
+# manifest feature when building in manifest mode.
+set(USE_SDL "Auto" CACHE STRING "Which SDL version to use: Auto (prefer SDL3, fall back to SDL2), SDL2, or SDL3")
+set_property(CACHE USE_SDL PROPERTY STRINGS "Auto" "SDL2" "SDL3")
+
+# Select the vcpkg manifest feature matching the requested SDL version. This only
+# has an effect when building in vcpkg manifest mode. Auto prefers SDL3 so that
+# vcpkg installs libSDL3 instead of libSDL2.
+if(USE_SDL STREQUAL "SDL2")
+    set(VCPKG_MANIFEST_FEATURES "sdl2")
+else()
+    set(VCPKG_MANIFEST_FEATURES "sdl3")
+endif()
+
 project(projectMSDL
         LANGUAGES C CXX
         VERSION 2.0.0
@@ -82,10 +97,6 @@ else()
 endif()
 
 set(PACKAGING_CONFIG_FILE "${DEFAULT_PACKAGING_CONFIG}" CACHE FILEPATH "CPack configuration file to use for packaging. This file must \"include(CPack)\" at the end to work properly.")
-
-# === SDL version selection ===
-set(USE_SDL "Auto" CACHE STRING "Which SDL version to use: Auto (prefer SDL3, fall back to SDL2), SDL2, or SDL3")
-set_property(CACHE USE_SDL PROPERTY STRINGS "Auto" "SDL2" "SDL3")
 
 option(ENABLE_FREETYPE "Use the Freetype font rendering library instead of the built-in stb_truetype if available" ON)
 

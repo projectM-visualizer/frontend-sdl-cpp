@@ -8,11 +8,15 @@ on: [ push, pull_request ]
 
 jobs:
   build-linux:
-    name: Ubuntu Linux ${{ matrix.sdl_version }}, x86_64
-    runs-on: ubuntu-latest
+    name: Ubuntu ${{ matrix.os }} ${{ matrix.sdl_version }}, x86_64
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        sdl_version: [SDL2, SDL3]
+        include:
+          - os: ubuntu-24.04
+            sdl_version: SDL2
+          - os: ubuntu-26.04
+            sdl_version: SDL3
 
     steps:
       - name: Install Build Dependencies
@@ -21,28 +25,8 @@ jobs:
           if [ "${{ matrix.sdl_version }}" = "SDL2" ]; then
             sudo apt install build-essential libgl1-mesa-dev mesa-common-dev libsdl2-dev libpoco-dev ninja-build libssl-dev libfreetype6-dev
           else
-            sudo apt install build-essential libgl1-mesa-dev mesa-common-dev libpoco-dev ninja-build libssl-dev libfreetype6-dev libasound2-dev libpulse-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
+            sudo apt install build-essential libgl1-mesa-dev mesa-common-dev libsdl3-dev libpoco-dev ninja-build libssl-dev libfreetype6-dev
           fi
-
-      - name: Checkout SDL3 Sources
-        if: matrix.sdl_version == 'SDL3'
-        uses: actions/checkout@v6
-        with:
-          repository: libsdl-org/SDL
-          path: sdl3
-          ref: 'main'
-          submodules: recursive
-
-      - name: Build/Install SDL3
-        if: matrix.sdl_version == 'SDL3'
-        run: |
-          mkdir cmake-build-sdl3
-          cmake -G Ninja -S sdl3 -B cmake-build-sdl3 \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install-sdl3
-          cmake --build cmake-build-sdl3 --parallel
-          cmake --install ${{ github.workspace }}/cmake-build-sdl3
 
       # We need to build/link Poco ourselves as static libraries, because Ubuntu Jammy ships with a broken Poco 1.11.0
       - name: Checkout Poco Sources
@@ -101,9 +85,6 @@ jobs:
         env:
           CMAKE_PREFIX_PATH: "${{ github.workspace }}/install-libprojectm;${{ github.workspace }}/install-poco"
         run: |
-          if [ "${{ matrix.sdl_version }}" = "SDL3" ]; then
-            CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH};${{ github.workspace }}/install-sdl3"
-          fi
           mkdir cmake-build-frontend
           cmake -G Ninja -S frontend-sdl-cpp -B cmake-build-frontend  \
             -DCMAKE_BUILD_TYPE=Release  \
