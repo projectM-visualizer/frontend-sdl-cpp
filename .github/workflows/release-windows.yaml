@@ -78,7 +78,7 @@ jobs:
       - name: Build projectMSDL
         run: |
           mkdir cmake-build-frontend-sdl2
-          cmake -G "Visual Studio 17 2022" -A "X64" `
+          cmake -G "Visual Studio 18 2026" -A "X64" `
             -S "${{ github.workspace }}/frontend-sdl2" `
             -B "${{ github.workspace }}/cmake-build-frontend-sdl2" `
             -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake" `
