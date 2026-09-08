@@ -1,6 +1,8 @@
 #include "AudioCaptureImpl_CoreAudioTap.h"
 
-#include <projectM-4/projectM.h>
+#include "notifications/AudioDataAvailableNotification.h"
+
+#include <Poco/NotificationCenter.h>
 
 #import <CoreAudio/CoreAudio.h>
 #import <Foundation/Foundation.h>
@@ -26,9 +28,8 @@ std::map<int, std::string> CoreAudioTapCapture::AudioDeviceList()
     return {{-1, _systemAudioDeviceName}};
 }
 
-void CoreAudioTapCapture::StartRecording(projectm* projectMHandle, int audioDeviceIndex)
+void CoreAudioTapCapture::StartRecording(int audioDeviceIndex)
 {
-    _projectMHandle = projectMHandle;
     _currentAudioDeviceIndex = -1; // Only one source in v1.
 
     if (StartTap())
@@ -188,7 +189,6 @@ bool CoreAudioTapCapture::StartTap()
             // 4. Install the IO proc. Runs on Core Audio's realtime thread; keep it allocation-
             //    and lock-free. Core Audio delivers deinterleaved float buffers (one buffer per
             //    channel) for tap aggregates, so forward the first buffer's frames to projectM.
-            projectm* handle = _projectMHandle;
             uint32_t channels = _channels;
 
             status = AudioDeviceCreateIOProcIDWithBlock(
@@ -196,7 +196,7 @@ bool CoreAudioTapCapture::StartTap()
                 ^(const AudioTimeStamp* /*inNow*/, const AudioBufferList* inInputData,
                   const AudioTimeStamp* /*inInputTime*/, AudioBufferList* /*outOutputData*/,
                   const AudioTimeStamp* /*inOutputTime*/) {
-                  if (handle == nullptr || inInputData == nullptr || inInputData->mNumberBuffers == 0)
+                  if (inInputData == nullptr || inInputData->mNumberBuffers == 0)
                   {
                       return;
                   }
@@ -210,10 +210,10 @@ bool CoreAudioTapCapture::StartTap()
                   auto* samples = static_cast<float*>(buffer.mData);
                   // mNumberChannels reflects the interleaving of this buffer.
                   uint32_t bufferChannels = buffer.mNumberChannels > 0 ? buffer.mNumberChannels : channels;
-                  unsigned int frameCount = buffer.mDataByteSize / sizeof(float) / bufferChannels;
+                  unsigned int sampleCount = buffer.mDataByteSize / sizeof(float);
 
-                  projectm_pcm_add_float(handle, samples, frameCount,
-                                         static_cast<projectm_channels>(bufferChannels));
+                  Poco::NotificationCenter::defaultCenter().postNotification(
+                      new AudioDataAvailableNotification(bufferChannels, samples, sampleCount));
                 });
 
             if (status != noErr || _ioProcID == nullptr)

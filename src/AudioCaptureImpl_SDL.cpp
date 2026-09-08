@@ -1,11 +1,11 @@
 #include "AudioCaptureImpl_SDL.h"
 
+#include "notifications/AudioDataAvailableNotification.h"
+
+#include <Poco/NotificationCenter.h>
 #include <Poco/Util/Application.h>
 
-#include <projectM-4/projectM.h>
-
 AudioCaptureImpl::AudioCaptureImpl()
-    : _requestedSampleCount(projectm_pcm_get_max_samples())
 {
     auto targetFps = Poco::Util::Application::instance().config().getUInt("projectM.fps", 60);
     if (targetFps > 0)
@@ -50,9 +50,8 @@ std::map<int, std::string> AudioCaptureImpl::AudioDeviceList()
     return deviceList;
 }
 
-void AudioCaptureImpl::StartRecording(projectm* projectMHandle, int audioDeviceIndex)
+void AudioCaptureImpl::StartRecording(int audioDeviceIndex)
 {
-    _projectMHandle = projectMHandle;
     _currentAudioDeviceIndex = audioDeviceIndex;
 
     poco_debug_f1(_logger, "Using SDL audio driver \"%s\".", std::string(SDL_GetCurrentAudioDriver()));
@@ -84,7 +83,7 @@ void AudioCaptureImpl::NextAudioDevice()
     // Will wrap around to default capture device (-1).
     int nextAudioDeviceId = ((_currentAudioDeviceIndex + 2) % (SDL_GetNumAudioDevices(true) + 1)) - 1;
 
-    StartRecording(_projectMHandle, nextAudioDeviceId);
+    StartRecording(nextAudioDeviceId);
 }
 
 void AudioCaptureImpl::AudioDeviceIndex(int index)
@@ -93,7 +92,7 @@ void AudioCaptureImpl::AudioDeviceIndex(int index)
     {
         StopRecording();
         _currentAudioDeviceIndex = index;
-        StartRecording(_projectMHandle, index);
+        StartRecording(index);
     }
 }
 
@@ -153,10 +152,18 @@ bool AudioCaptureImpl::OpenAudioDevice()
 void AudioCaptureImpl::AudioInputCallback(void* userData, unsigned char* stream, int len)
 {
     poco_assert_dbg(userData);
+
+    if (len < sizeof(float))
+    {
+        return;
+    }
+
     auto instance = reinterpret_cast<AudioCaptureImpl*>(userData);
 
-    unsigned int samples = len / sizeof(float) / instance->_channels;
+    unsigned int samples = len / sizeof(float);
 
-    projectm_pcm_add_float(instance->_projectMHandle, reinterpret_cast<float*>(stream), samples,
-                           static_cast<projectm_channels>(instance->_channels));
+    Poco::NotificationCenter::defaultCenter().postNotification(
+        new AudioDataAvailableNotification(instance->_channels,
+                                           reinterpret_cast<float*>(stream),
+                                           samples));
 }

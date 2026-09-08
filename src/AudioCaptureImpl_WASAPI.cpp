@@ -1,9 +1,10 @@
 #include "AudioCaptureImpl_WASAPI.h"
 
-#include <projectM-4/projectM.h>
+#include "notifications/AudioDataAvailableNotification.h"
 
 #include <Poco/UnicodeConverter.h>
 
+#include <Poco/NotificationCenter.h>
 #include <functiondiscoverykeys_devpkey.h>
 #include <mmdeviceapi.h>
 #include <objbase.h>
@@ -42,9 +43,8 @@ std::map<int, std::string> AudioCaptureImpl::AudioDeviceList()
     return deviceList;
 }
 
-void AudioCaptureImpl::StartRecording(projectm* projectMHandle, int audioDeviceIndex)
+void AudioCaptureImpl::StartRecording(int audioDeviceIndex)
 {
-    _projectMHandle = projectMHandle;
     _currentAudioDeviceIndex = audioDeviceIndex;
 
     _isCapturing = true;
@@ -74,7 +74,7 @@ void AudioCaptureImpl::NextAudioDevice()
     // Will wrap around to loopback capture device (-1).
     int nextAudioDeviceId = ((_currentAudioDeviceIndex + 2) % (static_cast<int>(captureDevices.size()) + 1)) - 1;
 
-    StartRecording(_projectMHandle, nextAudioDeviceId);
+    StartRecording(nextAudioDeviceId);
 }
 
 void AudioCaptureImpl::AudioDeviceIndex(int index)
@@ -87,7 +87,7 @@ void AudioCaptureImpl::AudioDeviceIndex(int index)
     {
         _currentAudioDeviceIndex = index;
         StopRecording();
-        StartRecording(_projectMHandle, index);
+        StartRecording(index);
     }
 }
 
@@ -447,7 +447,10 @@ void AudioCaptureImpl::CaptureThread()
 
                 if (framesAvailable > 0 && data != nullptr)
                 {
-                    projectm_pcm_add_float(_projectMHandle, reinterpret_cast<float*>(data), framesAvailable, static_cast<projectm_channels>(_channels));
+                    Poco::NotificationCenter::defaultCenter().postNotification(
+                        new AudioDataAvailableNotification(_channels,
+                                                           reinterpret_cast<float*>(data),
+                                                           framesAvailable * _channels));
                 }
 
                 _audioCaptureClient->ReleaseBuffer(framesAvailable);

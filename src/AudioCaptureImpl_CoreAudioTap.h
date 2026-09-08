@@ -40,10 +40,9 @@ public:
 
     /**
      * @brief Starts capturing system audio and forwarding it to projectM.
-     * @param projectMHandle projectM instance handle that will receive the captured data.
      * @param audioDeviceIndex Ignored in v1 (single system-audio source).
      */
-    void StartRecording(projectm* projectMHandle, int audioDeviceIndex);
+    void StartRecording(int audioDeviceIndex);
 
     /**
      * @brief Stops capturing and tears down the tap and aggregate device.

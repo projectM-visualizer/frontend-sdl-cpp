@@ -1,5 +1,6 @@
 #pragma once
 
+#include "notifications/AudioDataAvailableNotification.h"
 #include "notifications/PlaybackControlNotification.h"
 
 #include <projectM-4/projectM.h>
@@ -37,7 +38,7 @@ public:
     /**
      * Renders a single projectM frame.
      */
-    void RenderFrame() const;
+    void RenderFrame();
 
     /**
      * @brief Returns the targeted FPS value.
@@ -91,6 +92,8 @@ private:
 
     void PlaybackControlNotificationHandler(const Poco::AutoPtr<PlaybackControlNotification>& notification);
 
+    void AudioDataAvailableNotificationHandler(const Poco::AutoPtr<AudioDataAvailableNotification>& notification);
+
     std::vector<std::string> GetPathListWithDefault(const std::string& baseKey, const std::string& defaultPath);
 
     /**
@@ -111,7 +114,12 @@ private:
     projectm_handle _projectM{nullptr}; //!< Pointer to the projectM instance used by the application.
     projectm_playlist_handle _playlist{nullptr}; //!< Pointer to the projectM playlist manager instance.
 
+    uint32_t _audioChannels{0}; //!< Number of audio channels of the current capture device.
+    std::vector<float> _audioStagingBuffer; //!< Buffer which receives audio data from the capture implementation.
+    mutable Poco::Mutex _audioBufferMutex; //!< Mutex protecting access to the audio staging buffer.
+
     Poco::NObserver<ProjectMWrapper, PlaybackControlNotification> _playbackControlNotificationObserver{*this, &ProjectMWrapper::PlaybackControlNotificationHandler};
+    Poco::NObserver<ProjectMWrapper, AudioDataAvailableNotification> _audioDataAvailableNotificationObserver{*this, &ProjectMWrapper::AudioDataAvailableNotificationHandler};
 
     Poco::Logger& _logger{Poco::Logger::get("SDLRenderingWindow")}; //!< The class logger.
 };
