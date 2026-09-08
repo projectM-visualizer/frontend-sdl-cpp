@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Poco/File.h>
-#include <Poco/Path.h>
 #include <Poco/Logger.h>
+#include <Poco/Path.h>
 
 #include <set>
 
@@ -146,18 +146,19 @@ protected:
     void UpdateListSelection(int index, bool isSelected);
 
     std::string _title; //!< The window title.
+    std::string _titleAndId; //!< The window title including the ImGui ID.
     std::string _context; //!< Context data for the caller.
     std::vector<std::string> _extensions; //!< File extensions to filter.
     Mode _mode{Mode::File}; //!< Chooser mode, either file or directory.
-    bool _visible{ false }; //!< File chooser window visible.
-    bool _showHidden{ false }; //!< If true, hidden files/dirs are shown.
-    bool _multiSelect{ false }; //!< If true, selecting multiple files/directories is allowed.
-    Poco::Path _currentDir{ Poco::Path::current() }; //!< Current working dir.
+    bool _visible{false}; //!< File chooser window visible.
+    bool _showHidden{false}; //!< If true, hidden files/dirs are shown.
+    bool _multiSelect{false}; //!< If true, selecting multiple files/directories is allowed.
+    Poco::Path _currentDir{Poco::Path::current()}; //!< Current working dir.
     std::vector<Poco::File> _currentFileList; //!< File list of current directory
     std::vector<Poco::File> _selectedFiles; //!< Currently selected file(s).
     int _selectedFileIndex{ 0 }; //!< Last selected item in the file list.
     std::set<int> _selectedFileIndices; //!< Set of selected file indices in the list
 
 
-    Poco::Logger& _logger{ Poco::Logger::get("GuiFileChooserWindow") };
+    Poco::Logger& _logger{Poco::Logger::get("GuiFileChooserWindow")};
 };

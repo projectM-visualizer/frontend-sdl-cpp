@@ -73,7 +73,10 @@ bool FileChooser::MultiSelect() const
 void FileChooser::Show()
 {
     _selectedFiles.clear();
+    _titleAndId = _title + "###File Chooser";
     _visible = true;
+
+    ImGui::OpenPopup(_titleAndId.c_str());
 }
 
 void FileChooser::Close()
@@ -96,12 +99,8 @@ bool FileChooser::Draw()
         ChangeDirectory(Poco::Path::home());
     }
 
-    std::string dialogTileAndId = _title + "###File Chooser";
-
-    ImGui::OpenPopup(dialogTileAndId.c_str());
-
     ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
-    if (ImGui::BeginPopupModal(dialogTileAndId.c_str(), &_visible, ImGuiWindowFlags_NoCollapse))
+    if (ImGui::BeginPopupModal(_titleAndId.c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
     {
         DrawNavButtons();
 
@@ -174,10 +173,6 @@ bool FileChooser::Draw()
         }
 
         ImGui::EndPopup();
-    }
-    else
-    {
-        Close();
     }
 
     return fileSelected;
