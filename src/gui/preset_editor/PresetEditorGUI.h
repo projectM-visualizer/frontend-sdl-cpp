@@ -5,6 +5,8 @@
 #include "ExpressionCodeTypes.h"
 #include "PresetFile.h"
 
+#include "gui/FileChooser.h"
+
 #include <memory>
 #include <string>
 
@@ -98,6 +100,8 @@ private:
     std::string _loadedPresetPath; //!< The full path of the currently loaded preset. Can be empty.
     PresetFile _presetFile; //!< The raw preset data.
     EditorPreset _editorPreset; //!< The preset data in a parsed, strongly-typed container.
+    FileChooser _openPresetChooser{FileChooser::Mode::File}; //!< The file chooser for opening a preset file.
+    FileChooser _savePresetChooser{FileChooser::Mode::SaveFile}; //!< The file chooser for saving a preset file.
 
     std::unique_ptr<CodeEditorWindow> _codeEditorWindow; //!< The code editor window.
 };
