@@ -30,7 +30,7 @@ public:
 
     std::map<int, std::string> AudioDeviceList();
 
-    void StartRecording(projectm* projectMHandle, int audioDeviceIndex);
+    void StartRecording(int audioDeviceIndex);
 
     void StopRecording();
 

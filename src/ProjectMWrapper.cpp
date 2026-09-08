@@ -108,6 +108,7 @@ void ProjectMWrapper::initialize(Poco::Util::Application& app)
     }
 
     Poco::NotificationCenter::defaultCenter().addObserver(_playbackControlNotificationObserver);
+    Poco::NotificationCenter::defaultCenter().addObserver(_audioDataAvailableNotificationObserver);
 
     // Observe user configuration changes (set via the settings window)
     _userConfig->propertyChanged += Poco::delegate(this, &ProjectMWrapper::OnConfigurationPropertyChanged);
@@ -119,6 +120,7 @@ void ProjectMWrapper::uninitialize()
     _userConfig->propertyRemoved -= Poco::delegate(this, &ProjectMWrapper::OnConfigurationPropertyRemoved);
     _userConfig->propertyChanged -= Poco::delegate(this, &ProjectMWrapper::OnConfigurationPropertyChanged);
     Poco::NotificationCenter::defaultCenter().removeObserver(_playbackControlNotificationObserver);
+    Poco::NotificationCenter::defaultCenter().removeObserver(_audioDataAvailableNotificationObserver);
 
     if (_projectM)
     {
@@ -153,7 +155,7 @@ void ProjectMWrapper::UpdateRealFPS(float fps)
     projectm_set_fps(_projectM, static_cast<uint32_t>(std::round(fps)));
 }
 
-void ProjectMWrapper::RenderFrame() const
+void ProjectMWrapper::RenderFrame()
 {
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -165,6 +167,16 @@ void ProjectMWrapper::RenderFrame() const
         currentMeshY != _projectMConfigView->getInt("meshY", 125))
     {
         projectm_set_mesh_size(_projectM, _projectMConfigView->getInt("meshX", 220), _projectMConfigView->getInt("meshY", 125));
+    }
+
+    // Add new audio data to the instance from the staging buffer
+    {
+        Poco::ScopedLock lock(_audioBufferMutex);
+        if (!_audioStagingBuffer.empty())
+        {
+            projectm_pcm_add_float(_projectM, _audioStagingBuffer.data(), _audioStagingBuffer.size() / _audioChannels, static_cast<projectm_channels>(_audioChannels));
+            _audioStagingBuffer.clear();
+        }
     }
 
     projectm_opengl_render_frame(_projectM);
@@ -261,6 +273,20 @@ void ProjectMWrapper::PlaybackControlNotificationHandler(const Poco::AutoPtr<Pla
             break;
         }
     }
+}
+
+void ProjectMWrapper::AudioDataAvailableNotificationHandler(const Poco::AutoPtr<AudioDataAvailableNotification>& notification)
+{
+    Poco::ScopedLock lock(_audioBufferMutex);
+
+    // Clear existing buffer data if channel count differs, e.g. if audio device has changed
+    if (_audioChannels != notification->Channels())
+    {
+        _audioChannels = notification->Channels();
+        _audioStagingBuffer.clear();
+    }
+
+    std::copy(notification->Samples().cbegin(), notification->Samples().cend(), std::back_inserter(_audioStagingBuffer));
 }
 
 std::vector<std::string> ProjectMWrapper::GetPathListWithDefault(const std::string& baseKey, const std::string& defaultPath)
