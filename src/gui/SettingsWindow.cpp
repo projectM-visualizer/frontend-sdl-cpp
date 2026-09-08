@@ -64,16 +64,6 @@ void SettingsWindow::Draw()
     }
     ImGui::End();
 
-    if (_pathChooser.Draw())
-    {
-        auto& selectedDirectory = _pathChooser.SelectedFiles();
-        if (!selectedDirectory.empty())
-        {
-            _userConfiguration->setString(_pathChooser.Context(),
-                                          Poco::Path(selectedDirectory.at(0).path()).makeDirectory().toString());
-            _changed = true;
-        }
-    }
 }
 
 void SettingsWindow::DrawProjectMSettingsTab()
@@ -389,6 +379,18 @@ void SettingsWindow::PathSetting(const std::string& property)
         _pathChooser.Context(property);
         _pathChooser.Show();
     }
+
+    if (_pathChooser.Draw())
+    {
+        auto& selectedDirectory = _pathChooser.SelectedFiles();
+        if (!selectedDirectory.empty())
+        {
+            _userConfiguration->setString(_pathChooser.Context(),
+                                          Poco::Path(selectedDirectory.at(0).path()).makeDirectory().toString());
+            _changed = true;
+        }
+    }
+
     ImGui::PopID();
 
     ResetButton(property);
