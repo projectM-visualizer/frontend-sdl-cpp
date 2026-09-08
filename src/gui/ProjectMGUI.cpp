@@ -22,11 +22,11 @@
 
 #include <Poco/Util/Application.h>
 
+#include <memory>
 #include <utility>
 
 ProjectMGUI::ProjectMGUI()
     : _mainMenu(std::make_unique<MainMenu>(*this))
-    , _presetEditorGUI(std::make_unique<Editor::PresetEditorGUI>(*this))
     , _settingsWindow(std::make_unique<SettingsWindow>(*this))
     , _aboutWindow(std::make_unique<AboutWindow>(*this))
     , _helpWindow(std::make_unique<HelpWindow>())
@@ -188,7 +188,15 @@ void ProjectMGUI::Draw()
 
     if (_visible)
     {
-        if (!_presetEditorGUI->Draw())
+        if (_presetEditorGUI)
+        {
+            _presetEditorGUI->Draw();
+            if (_presetEditorGUI->Done())
+            {
+                _presetEditorGUI.reset();
+            }
+        }
+        else
         {
             _mainMenu->Draw();
             _settingsWindow->Draw();
@@ -240,6 +248,7 @@ void ProjectMGUI::PopFont()
 
 void ProjectMGUI::ShowPresetEditor(const std::string& presetFileName)
 {
+    _presetEditorGUI = std::make_unique<Editor::PresetEditorGUI>(*this);
     _presetEditorGUI->Show(presetFileName);
 }
 

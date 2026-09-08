@@ -134,6 +134,11 @@ std::string CodeEditorTab::Title() const
     return _tabTitle;
 }
 
+bool CodeEditorTab::IsTextChanged() const
+{
+    return _textEditor->IsTextChanged();
+}
+
 bool CodeEditorTab::DrawToolBar()
 {
     bool textChanged = false;
