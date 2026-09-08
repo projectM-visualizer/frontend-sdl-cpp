@@ -1,11 +1,5 @@
 #pragma once
 
-#include "AboutWindow.h"
-#include "HelpWindow.h"
-#include "MainMenu.h"
-#include "SettingsWindow.h"
-#include "ToastMessage.h"
-
 #include "notifications/DisplayToastNotification.h"
 
 #include <SDL2/SDL.h>
@@ -15,13 +9,28 @@
 
 #include <Poco/Util/Subsystem.h>
 
+#include <memory>
+
+namespace Editor {
+class PresetEditorGUI;
+}
+
 struct ImFont;
 class ProjectMWrapper;
 class SDLRenderingWindow;
+class MainMenu;
+class SettingsWindow;
+class AboutWindow;
+class HelpWindow;
+class ToastMessage;
 
 class ProjectMGUI : public Poco::Util::Subsystem
 {
 public:
+    ProjectMGUI();
+
+    ~ProjectMGUI() override;
+
     const char* name() const override;
 
     void initialize(Poco::Util::Application& app) override;
@@ -85,9 +94,25 @@ public:
     void PushUIFont();
 
     /**
+     * @brief Pushes the "Solid" icon font to the render stack
+     */
+    void PushSolidIconsFont();
+
+    /**
+     * @brief Pushes the "Regular" icon font to the render stack
+     */
+    void PushRegularIconsFont();
+
+    /**
      * @brief Pops the last font from the stack
      */
     void PopFont();
+
+    /**
+     * @brief Opens the preset editor UI.
+     * @param presetFileName The file name of the preset to edit, or empty to use the currently loaded preset.
+     */
+    void ShowPresetEditor(const std::string& presetFileName);
 
     /**
      * @brief Displays the settings window.
@@ -121,16 +146,19 @@ private:
     SDL_GLContext _glContext{nullptr}; //!< Pointer to the OpenGL context associated with the window.
     ImFont* _uiFont{nullptr}; //!< Main UI font (monospaced).
     ImFont* _toastFont{nullptr}; //!< Toast message font (sans-serif, larger).
+    ImFont* _fontAwesomeIconsSolid{nullptr}; //!< "Solid" icons set by FontAwesome.
+    ImFont* _fontAwesomeIconsRegular{nullptr}; //!< "Regular" icons set by FontAwesome.
 
     uint64_t _lastFrameTicks{0}; //!< Tick count of the last frame (see SDL_GetTicks64)
 
     float _userScalingFactor{1.0f}; //!< The user-defined UI scaling factor.
     float _textScalingFactor{0.0f}; //!< The text scaling factor.
 
-    MainMenu _mainMenu{*this};
-    SettingsWindow _settingsWindow{*this}; //!< The settings window.
-    AboutWindow _aboutWindow{*this}; //!< The about window.
-    HelpWindow _helpWindow; //!< Help window with shortcuts and tips.
+    std::unique_ptr<MainMenu> _mainMenu;
+    std::unique_ptr<Editor::PresetEditorGUI> _presetEditorGUI; //!< The preset editor GUI.
+    std::unique_ptr<SettingsWindow> _settingsWindow; //!< The settings window.
+    std::unique_ptr<AboutWindow> _aboutWindow; //!< The about window.
+    std::unique_ptr<HelpWindow> _helpWindow; //!< Help window with shortcuts and tips.
 
     std::unique_ptr<ToastMessage> _toast; //!< Current toast to be displayed.
 

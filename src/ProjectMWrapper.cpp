@@ -143,6 +143,31 @@ projectm_playlist_handle ProjectMWrapper::Playlist() const
     return _playlist;
 }
 
+bool ProjectMWrapper::LoadPresetData(const std::string& presetData, std::string& errorMessage)
+{
+    projectm_load_preset_data(_projectM, presetData.c_str(), false);
+
+    if (_presetLoadFailed)
+    {
+        errorMessage = _presetLoadFailedMessage;
+        _presetLoadFailed = false;
+        return false;
+    }
+
+    return true;
+}
+
+void ProjectMWrapper::UnbindPlaylist()
+{
+    projectm_playlist_connect(_playlist, nullptr);
+}
+
+void ProjectMWrapper::BindPlaylist()
+{
+    projectm_playlist_connect(_playlist, _projectM);
+    projectm_playlist_set_position(_playlist, projectm_playlist_get_position(_playlist), false);
+}
+
 int ProjectMWrapper::TargetFPS()
 {
     return _projectMConfigView->getInt("fps", 60);
@@ -206,6 +231,42 @@ std::string ProjectMWrapper::ProjectMRuntimeVersion()
     return projectMRuntimeVersion;
 }
 
+std::string ProjectMWrapper::CurrentPresetFileName() const
+{
+    if (projectm_playlist_size(_playlist) == 0)
+    {
+        return {};
+    }
+
+    auto presetName = projectm_playlist_item(_playlist, projectm_playlist_get_position(_playlist));
+    std::string presetNameString(presetName);
+    projectm_playlist_free_string(presetName);
+
+    if (presetNameString.substr(0, 5) == "idle:")
+    {
+        return {};
+    }
+
+    return presetNameString;
+}
+
+void ProjectMWrapper::EnablePlaybackControl(bool enable)
+{
+    _playbackControlEnabled = enable;
+}
+
+void ProjectMWrapper::HardLockPreset(bool lock)
+{
+    if (lock)
+    {
+        projectm_set_preset_locked(_projectM, true);
+    }
+    else
+    {
+        projectm_set_preset_locked(_projectM, _userConfig->getBool("projectM.presetLocked", false));
+    }
+}
+
 void ProjectMWrapper::PresetFileNameToClipboard() const
 {
     auto presetName = projectm_playlist_item(_playlist, projectm_playlist_get_position(_playlist));
@@ -223,8 +284,20 @@ void ProjectMWrapper::PresetSwitchedEvent(bool isHardCut, unsigned int index, vo
     Poco::NotificationCenter::defaultCenter().postNotification(new UpdateWindowTitleNotification);
 }
 
+void ProjectMWrapper::PresetSwitchFailedEvent(const char* presetFilename, const char* message, void* context)
+{
+    auto that = reinterpret_cast<ProjectMWrapper*>(context);
+    that->_presetLoadFailedMessage = message;
+    that->_presetLoadFailed = true;
+}
+
 void ProjectMWrapper::PlaybackControlNotificationHandler(const Poco::AutoPtr<PlaybackControlNotification>& notification)
 {
+    if (!_playbackControlEnabled)
+    {
+        return;
+    }
+
     bool shuffleEnabled = projectm_playlist_get_shuffle(_playlist);
 
     switch (notification->ControlAction())

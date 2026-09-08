@@ -4,6 +4,7 @@
 
 #include "gui/ProjectMGUI.h"
 
+#include <Poco/File.h>
 #include <Poco/NotificationCenter.h>
 
 #include <Poco/Util/Application.h>
@@ -289,6 +290,13 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
             break;
 #endif
 
+        case SDLK_e:
+            if (modifierPressed)
+            {
+                _projectMGui.ShowPresetEditor(_projectMWrapper.CurrentPresetFileName());
+            }
+            break;
+
         case SDLK_f:
             if (modifierPressed)
             {
@@ -312,7 +320,14 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
             break;
 
         case SDLK_n:
-            Poco::NotificationCenter::defaultCenter().postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::NextPreset, _keyStates._shiftPressed));
+            if (_keyStates._ctrlPressed && _keyStates._shiftPressed && !_keyStates._altPressed)
+            {
+                _projectMGui.ShowPresetEditor("");
+            }
+            else
+            {
+                Poco::NotificationCenter::defaultCenter().postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::NextPreset, _keyStates._shiftPressed));
+            }
             break;
 
         case SDLK_p:

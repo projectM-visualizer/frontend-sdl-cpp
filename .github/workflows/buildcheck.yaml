@@ -64,6 +64,13 @@ jobs:
           cmake --build cmake-build-libprojectm --parallel
           cmake --install "${{ github.workspace }}/cmake-build-libprojectm"
 
+      - name: Build/Install projectm-eval
+        run: |
+          mkdir cmake-build-projectm-eval
+          cmake -G Ninja -S projectm/vendor/projectm-eval -B cmake-build-projectm-eval -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install-projectm-eval
+          cmake --build cmake-build-projectm-eval --parallel
+          cmake --install "${{ github.workspace }}/cmake-build-projectm-eval"
+
       - name: Checkout frontend-sdl2 Sources
         uses: actions/checkout@v6
         with:
@@ -75,7 +82,7 @@ jobs:
           mkdir cmake-build-frontend-sdl2
           cmake -G Ninja -S frontend-sdl2 -B cmake-build-frontend-sdl2  \
             -DCMAKE_BUILD_TYPE=Release  \
-            "-DCMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/install-libprojectm;${GITHUB_WORKSPACE}/install-poco"  \
+            "-DCMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/install-libprojectm;${{ github.workspace }}/install-projectm-eval;${GITHUB_WORKSPACE}/install-poco"  \
             "-DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install-frontend-sdl2"
           cmake --build cmake-build-frontend-sdl2 --parallel
 
@@ -126,20 +133,6 @@ jobs:
             setapikey "${{ secrets.VCPKG_PACKAGES_TOKEN }}" `
             -Source "${{ env.FEED_URL }}"
 
-      - name: Checkout libprojectM Sources
-        uses: actions/checkout@v6
-        with:
-          repository: projectM-visualizer/projectm
-          path: projectm
-          submodules: recursive
-
-      - name: Build/Install libprojectM
-        run: |
-          mkdir cmake-build-libprojectm
-          cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/projectm" -B "${{ github.workspace }}/cmake-build-libprojectm" -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-libprojectm" -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=NO
-          cmake --build "${{ github.workspace }}/cmake-build-libprojectm" --config Release --parallel
-          cmake --install "${{ github.workspace }}/cmake-build-libprojectm" --config Release
-
       - name: Checkout projectMSDL Sources
         uses: actions/checkout@v6
         with:
@@ -149,7 +142,7 @@ jobs:
       - name: Build projectMSDL
         run: |
           mkdir cmake-build-frontend-sdl2
-          cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/frontend-sdl2" -B "${{ github.workspace }}/cmake-build-frontend-sdl2" -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static  -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend-sdl2" -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" -DCMAKE_VERBOSE_MAKEFILE=YES -DSDL2_LINKAGE=static -DBUILD_TESTING=YES
+          cmake -G "Visual Studio 17 2022" -A "X64" -S "${{ github.workspace }}/frontend-sdl2" -B "${{ github.workspace }}/cmake-build-frontend-sdl2" -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend-sdl2" -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" -DCMAKE_VERBOSE_MAKEFILE=YES -DSDL2_LINKAGE=static -DBUILD_TESTING=YES
           cmake --build "${{ github.workspace }}/cmake-build-frontend-sdl2" --parallel --config Release
 
       - name: Package projectMSDL
@@ -181,9 +174,16 @@ jobs:
       - name: Build/Install libprojectM
         run: |
           mkdir cmake-build-libprojectm
-          cmake -G Ninja -S "${{ github.workspace }}/projectm" -B "${{ github.workspace }}/cmake-build-libprojectm" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-libprojectm"
+          cmake -G Ninja -S "${{ github.workspace }}/projectm" -B "${{ github.workspace }}/cmake-build-libprojectm" -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-libprojectm;"
           cmake --build "${{ github.workspace }}/cmake-build-libprojectm" --parallel
           cmake --install "${{ github.workspace }}/cmake-build-libprojectm"
+
+      - name: Build/Install projectm-eval
+        run: |
+          mkdir cmake-build-projectm-eval
+          cmake -G Ninja -S "${{ github.workspace }}/projectm/vendor/projectm-eval" -B "${{ github.workspace }}/cmake-build-projectm-eval" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-projectm-eval"
+          cmake --build "${{ github.workspace }}/cmake-build-projectm-eval" --parallel
+          cmake --install "${{ github.workspace }}/cmake-build-projectm-eval"
 
       - name: Checkout projectMSDL Sources
         uses: actions/checkout@v6
@@ -194,7 +194,7 @@ jobs:
       - name: Build projectMSDL
         run: |
           mkdir cmake-build-frontend-sdl2
-          cmake -G Ninja -S "${{ github.workspace }}/frontend-sdl2" -B "${{ github.workspace }}/cmake-build-frontend-sdl2" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend-sdl2"
+          cmake -G Ninja -S "${{ github.workspace }}/frontend-sdl2" -B "${{ github.workspace }}/cmake-build-frontend-sdl2" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm;${{ github.workspace }}/install-projectm-eval" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend-sdl2"
           cmake --build "${{ github.workspace }}/cmake-build-frontend-sdl2" --parallel
 
       - name: Package projectMSDL
