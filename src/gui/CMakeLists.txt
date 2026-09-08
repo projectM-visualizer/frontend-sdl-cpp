@@ -42,6 +42,8 @@ add_library(ProjectMSDL-GUI STATIC
         IconsFontAwesome7.h
         MainMenu.cpp
         MainMenu.h
+        MessageBox.cpp
+        MessageBox.h
         PresetSelection.cpp
         PresetSelection.h
         ProjectMGUI.cpp
@@ -52,7 +54,7 @@ add_library(ProjectMSDL-GUI STATIC
         SystemBrowser.h
         ToastMessage.cpp
         ToastMessage.h
-        )
+)
 
 target_compile_definitions(ProjectMSDL-GUI
         PRIVATE

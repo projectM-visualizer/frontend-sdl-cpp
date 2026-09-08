@@ -1,5 +1,6 @@
 #include "PresetSelection.h"
 
+#include "IconsFontAwesome7.h"
 #include "ProjectMWrapper.h"
 #include "SDLRenderingWindow.h"
 
@@ -63,6 +64,7 @@ void PresetSelection::Draw()
 
         if (ImGui::Button("Load Preset..."))
         {
+            _fileChooser.Title(ICON_FA_FILE_IMPORT " Load Preset");
             _fileChooser.Show();
         }
     }
