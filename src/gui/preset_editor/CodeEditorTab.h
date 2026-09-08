@@ -27,6 +27,8 @@ public:
 
     std::string Title() const;
 
+    bool IsTextChanged() const;
+
 private:
     using ContextDestructor = void(*)(projectm_eval_context*);
     using ContextHandle = std::unique_ptr<projectm_eval_context, ContextDestructor>;

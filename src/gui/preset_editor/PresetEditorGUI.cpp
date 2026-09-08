@@ -3,6 +3,7 @@
 #include "CodeContextInformation.h"
 #include "CodeEditorWindow.h"
 #include "IconsFontAwesome7.h"
+#include "ProjectMGUI.h"
 
 #include "ProjectMSDLApplication.h"
 #include "ProjectMWrapper.h"
@@ -18,6 +19,10 @@
 
 #include <sstream>
 
+#define TRACK_EDITED(imgui_cmd) \
+    if (imgui_cmd)              \
+    _hasUnsavedChanges = true
+
 namespace Editor {
 
 PresetEditorGUI::PresetEditorGUI(ProjectMGUI& gui)
@@ -30,10 +35,13 @@ PresetEditorGUI::PresetEditorGUI(ProjectMGUI& gui)
 
 PresetEditorGUI::~PresetEditorGUI()
 {
+    ReleaseProjectMControl();
 }
 
 void PresetEditorGUI::Show(const std::string& presetFile)
 {
+    _loadedPresetPath = presetFile;
+
     if (presetFile.empty())
     {
         _presetFile = PresetFile::EmptyPreset();
@@ -62,6 +70,7 @@ void PresetEditorGUI::Show(const std::string& presetFile)
     _editorPreset.FromParsedFile(_presetFile);
     _codeEditorWindow = std::make_unique<CodeEditorWindow>();
 
+    _hasUnsavedChanges = false;
     _visible = true;
 }
 
@@ -70,12 +79,21 @@ void PresetEditorGUI::Close()
     _wantClose = true;
 }
 
+bool PresetEditorGUI::Done() const
+{
+    // It's okay to destroy the editor if the user wants to close it, the window isn't displayed anymore and
+    // the editor doesn't have unsaved changes.
+    return !_visible && _wantClose && !_hasUnsavedChanges;
+}
+
 bool PresetEditorGUI::Draw()
 {
     if (!_visible)
     {
         return false;
     }
+
+    bool textChangedBeforeDraw = _hasUnsavedChanges;
 
     HandleGlobalEditorKeys();
 
@@ -93,21 +111,26 @@ bool PresetEditorGUI::Draw()
         ImGui::SameLine();
 
         _codeEditorWindow->Draw();
+        TRACK_EDITED(_codeEditorWindow->IsTextChanged());
     }
     ImGui::End();
 
     ImGui::PopStyleColor();
 
-    if (!_visible || _wantClose)
+    if (textChangedBeforeDraw != _hasUnsavedChanges)
     {
-        // Check for unsaved data
+        UpdateWindowTitle();
+    }
 
-        ReleaseProjectMControl();
-
-        _visible = false;
-        _wantClose = false;
-
-        _codeEditorWindow.reset();
+    if (_wantClose)
+    {
+        if (!_hasUnsavedChanges)
+        {
+            _visible = false;
+        }
+        else
+        {
+        }
     }
 
     return _visible;
@@ -146,7 +169,6 @@ void PresetEditorGUI::HandleGlobalEditorKeys()
     // Save preset - Ctrl+S
     if (ctrl && ImGui::IsKeyPressed(ImGuiKey_S, false))
     {
-
     }
 
     // New preset - Ctrl+N
@@ -163,7 +185,10 @@ void PresetEditorGUI::TakeProjectMControl()
     _projectMWrapper.EnablePlaybackControl(false);
     _projectMWrapper.HardLockPreset(true);
 
-    Poco::NotificationCenter::defaultCenter().postNotification(new UpdateWindowTitleNotification("projectM Preset Editor"));
+    // Show the UI
+    _gui.Visible(true);
+
+    UpdateWindowTitle();
 }
 
 void PresetEditorGUI::ReleaseProjectMControl()
@@ -173,7 +198,30 @@ void PresetEditorGUI::ReleaseProjectMControl()
     _projectMWrapper.EnablePlaybackControl(true);
     _projectMWrapper.HardLockPreset(false);
 
+    // Hide the UI
+    _gui.Visible(false);
+
     Poco::NotificationCenter::defaultCenter().postNotification(new UpdateWindowTitleNotification());
+}
+
+void PresetEditorGUI::UpdateWindowTitle()
+{
+    std::string windowTitle = "projectM Preset Editor ➫ ";
+    if (!_loadedPresetPath.empty())
+    {
+        windowTitle += Poco::Path(_loadedPresetPath).getFileName();
+    }
+    else
+    {
+        windowTitle += "New Preset.milk";
+    }
+
+    if (_hasUnsavedChanges)
+    {
+        windowTitle += " [Changed]";
+    }
+
+    Poco::NotificationCenter::defaultCenter().postNotification(new UpdateWindowTitleNotification(windowTitle));
 }
 
 void PresetEditorGUI::EditCode(ExpressionCodeTypes type, std::string& code, int index)
@@ -272,6 +320,7 @@ void PresetEditorGUI::DrawPresetCompatibilitySettings()
                                 _editorPreset.presetVersion = 201;
                                 break;
                         }
+                        _hasUnsavedChanges = true;
                     }
 
                     if (isSelected)
@@ -291,6 +340,7 @@ void PresetEditorGUI::DrawPresetCompatibilitySettings()
             if (ImGui::SliderInt("PS Version", &_editorPreset.warpShaderVersion, 0, 4))
             {
                 _editorPreset.compositeShaderVersion = _editorPreset.warpShaderVersion;
+                _hasUnsavedChanges = true;
             }
             DrawHelpTooltip("Minimum required DirectX Pixel Shader version.\n0/1=No PS, 2=PS 2.0, 3=PS 2.x, 4=PS 3.0 (Ctrl-click to set higher value)");
 
@@ -301,9 +351,9 @@ void PresetEditorGUI::DrawPresetCompatibilitySettings()
             ImGui::TextUnformatted("Pixel Shader Versions");
             ImGui::Indent(16.0f);
 
-            ImGui::SliderInt("Warp PS Version", &_editorPreset.warpShaderVersion, 0, 4);
+            TRACK_EDITED(ImGui::SliderInt("Warp PS Version", &_editorPreset.warpShaderVersion, 0, 4));
             DrawHelpTooltip("Minimum required DirectX Pixel Shader version for the warp shader.\n0/1=No PS, 2=PS 2.0, 3=PS 2.x, 4=PS 3.0 (Ctrl-click to set higher value)");
-            ImGui::SliderInt("Composite PS Version", &_editorPreset.compositeShaderVersion, 0, 4);
+            TRACK_EDITED(ImGui::SliderInt("Composite PS Version", &_editorPreset.compositeShaderVersion, 0, 4));
             DrawHelpTooltip("Minimum required DirectX Pixel Shader version for the composite shader.\n0/1=No PS, 2=PS 2.0, 3=PS 2.x, 4=PS 3.0 (Ctrl-click to set higher value)");
 
             ImGui::Unindent(16.0f);
@@ -320,27 +370,27 @@ void PresetEditorGUI::DrawGeneralParameters()
         ImGui::TextUnformatted("Post-Processing Filters");
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("Decay##PerFrameDecay", &_editorPreset.decay, 0.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Decay##PerFrameDecay", &_editorPreset.decay, 0.00f, 1.0f));
         DrawHelpTooltip("Controls the eventual fade to black.\n1=no fade, 0.9=strong fade, 0.98=recommended");
 
         ImGui::BeginDisabled(usesCompositeShader);
 
-        ImGui::SliderFloat("Gamma Adjustment##GammaAdjustment", &_editorPreset.gammaAdj, 0.00f, 10.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Gamma Adjustment##GammaAdjustment", &_editorPreset.gammaAdj, 0.00f, 10.0f));
         DrawHelpTooltip("Controls display brightness.\n1=normal, 2=double, 3=triple, etc.\nOnly applied if no composite shader is used!");
 
-        ImGui::Checkbox("Brighten", &_editorPreset.brighten);
+        TRACK_EDITED(ImGui::Checkbox("Brighten", &_editorPreset.brighten));
         DrawHelpTooltip("Brightens the darker parts of the image (nonlinear; square root filter)\nOnly applied if no composite shader is used!");
 
-        ImGui::Checkbox("Darken", &_editorPreset.darken);
+        TRACK_EDITED(ImGui::Checkbox("Darken", &_editorPreset.darken));
         DrawHelpTooltip("Darkens the brighter parts of the image (nonlinear; squaring filter)\nOnly applied if no composite shader is used!");
 
-        ImGui::Checkbox("Solarize", &_editorPreset.solarize);
+        TRACK_EDITED(ImGui::Checkbox("Solarize", &_editorPreset.solarize));
         DrawHelpTooltip("Emphasizes mid-range colors\nOnly applied if no composite shader is used!");
 
-        ImGui::Checkbox("Invert", &_editorPreset.invert);
+        TRACK_EDITED(ImGui::Checkbox("Invert", &_editorPreset.invert));
         DrawHelpTooltip("Inverts the colors in the image\nOnly applied if no composite shader is used!");
 
-        ImGui::Checkbox("Darken Center", &_editorPreset.darkenCenter);
+        TRACK_EDITED(ImGui::Checkbox("Darken Center", &_editorPreset.darkenCenter));
         DrawHelpTooltip("Darkens a diamond-shaped area in the center of the image.\nApplied after drawing shapes/waveforms, but before drawing borders.");
 
         ImGui::Unindent(16.0f);
@@ -354,10 +404,10 @@ void PresetEditorGUI::DrawGeneralParameters()
 
         ImGui::TextUnformatted("Video Echo");
         ImGui::Indent(16.0f);
-        ImGui::SliderFloat("Zoom##VideoEchoZoom", &_editorPreset.videoEchoZoom, 0.01f, 10.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Zoom##VideoEchoZoom", &_editorPreset.videoEchoZoom, 0.01f, 10.0f));
         DrawHelpTooltip("Controls the size of the second graphics layer\nOnly applied if no composite shader is used!");
 
-        ImGui::SliderFloat("Alpha##VideoEchoAlpha", &_editorPreset.videoEchoAlpha, 0.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Alpha##VideoEchoAlpha", &_editorPreset.videoEchoAlpha, 0.00f, 1.0f));
         DrawHelpTooltip("Controls the opacity of the second graphics layer.\n0=transparent (off), 0.5=half-mix, 1=opaque\nOnly applied if no composite shader is used!");
 
         {
@@ -371,6 +421,7 @@ void PresetEditorGUI::DrawGeneralParameters()
                     if (ImGui::Selectable(videoEchoOrientations[index], isSelected))
                     {
                         _editorPreset.videoEchoOrientation = index;
+                        _hasUnsavedChanges = true;
                     }
 
                     if (isSelected)
@@ -397,11 +448,11 @@ void PresetEditorGUI::DrawGeneralParameters()
 
         ImGui::Indent(16.0f);
 
-        ImGui::DragFloatRange2("Blur 1 Range", &_editorPreset.blur1Min, &_editorPreset.blur1Max, 0.01, 0.0, 1.0);
-        ImGui::DragFloatRange2("Blur 2 Range", &_editorPreset.blur2Min, &_editorPreset.blur2Max, 0.01, 0.0, 1.0);
-        ImGui::DragFloatRange2("Blur 3 Range", &_editorPreset.blur3Min, &_editorPreset.blur3Max, 0.01, 0.0, 1.0);
+        TRACK_EDITED(ImGui::DragFloatRange2("Blur 1 Range", &_editorPreset.blur1Min, &_editorPreset.blur1Max, 0.01, 0.0, 1.0));
+        TRACK_EDITED(ImGui::DragFloatRange2("Blur 2 Range", &_editorPreset.blur2Min, &_editorPreset.blur2Max, 0.01, 0.0, 1.0));
+        TRACK_EDITED(ImGui::DragFloatRange2("Blur 3 Range", &_editorPreset.blur3Min, &_editorPreset.blur3Max, 0.01, 0.0, 1.0));
         ImGui::Spacing();
-        ImGui::SliderFloat("Blur 1 Edge Darken", &_editorPreset.blur1EdgeDarken, 0.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Blur 1 Edge Darken", &_editorPreset.blur1EdgeDarken, 0.00f, 1.0f));
 
         ImGui::Unindent(16.0f);
 
@@ -419,22 +470,22 @@ void PresetEditorGUI::DrawDefaultWaveformSettings()
 
         ImGui::Indent(16.0f);
 
-        ImGui::Checkbox("Additive Waves##WaveformAdditive", &_editorPreset.additiveWaves);
+        TRACK_EDITED(ImGui::Checkbox("Additive Waves##WaveformAdditive", &_editorPreset.additiveWaves));
         DrawHelpTooltip("The wave is drawn additively, saturating the image at white");
 
-        ImGui::Checkbox("Dots##WaveformDrawDots", &_editorPreset.waveDots);
+        TRACK_EDITED(ImGui::Checkbox("Dots##WaveformDrawDots", &_editorPreset.waveDots));
         DrawHelpTooltip("The waveform is drawn as dots (instead of lines)");
 
-        ImGui::Checkbox("Thick##WaveformDrawThick", &_editorPreset.waveThick);
+        TRACK_EDITED(ImGui::Checkbox("Thick##WaveformDrawThick", &_editorPreset.waveThick));
         DrawHelpTooltip("The waveform's lines (or dots) are drawn with double thickness");
 
-        ImGui::SliderFloat("Scale##DefaultWaveformScale", &_editorPreset.waveScale, 0.00f, 5.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Scale##DefaultWaveformScale", &_editorPreset.waveScale, 0.00f, 5.0f));
         DrawHelpTooltip("Scaling factor of the waveform.\n1 = original size, 2 = twice the size, 0.5  = half the size");
 
-        ImGui::SliderFloat("Smoothing##DefaultWaveformSmoothing", &_editorPreset.waveSmoothing, 0.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Smoothing##DefaultWaveformSmoothing", &_editorPreset.waveSmoothing, 0.00f, 1.0f));
         DrawHelpTooltip("Smoothing of the waveform.\n0 = no smoothing, 0.75 = heavy smoothing");
 
-        ImGui::SliderFloat("Mystery Param##DefaultWaveformParam", &_editorPreset.waveParam, -1.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Mystery Param##DefaultWaveformParam", &_editorPreset.waveParam, -1.00f, 1.0f));
         DrawHelpTooltip("This value does different things depending on the mode.\nFor example, it could control angle at which the waveform was drawn.");
 
         ImGui::Unindent(16.0f);
@@ -444,10 +495,10 @@ void PresetEditorGUI::DrawDefaultWaveformSettings()
 
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("X##DefaultWaveformX", &_editorPreset.waveX, 0.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("X##DefaultWaveformX", &_editorPreset.waveX, 0.00f, 1.0f));
         DrawHelpTooltip("Position of the waveform.\n0 = far left edge of screen, 0.5 = center, 1 = far right");
 
-        ImGui::SliderFloat("Y##DefaultWaveformY", &_editorPreset.waveY, 0.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Y##DefaultWaveformY", &_editorPreset.waveY, 0.00f, 1.0f));
         DrawHelpTooltip("Position of the waveform.\n0 = very bottom of screen, 0.5 = center, 1 = top");
 
         ImGui::Unindent(16.0f);
@@ -457,16 +508,16 @@ void PresetEditorGUI::DrawDefaultWaveformSettings()
 
         ImGui::Indent(16.0f);
 
-        ImGui::ColorEdit4("Color##DefaultWaveformColor", &_editorPreset.waveColor.red, ImGuiColorEditFlags_Float);
+        TRACK_EDITED(ImGui::ColorEdit4("Color##DefaultWaveformColor", &_editorPreset.waveColor.red, ImGuiColorEditFlags_Float));
         DrawHelpTooltip("The color of the waveform");
 
-        ImGui::Checkbox("Maximize Wave Color", &_editorPreset.maximizeWaveColor);
+        TRACK_EDITED(ImGui::Checkbox("Maximize Wave Color", &_editorPreset.maximizeWaveColor));
         DrawHelpTooltip("All 3 R/G/B colors will be scaled up until at least one reaches 1.0");
 
-        ImGui::Checkbox("Modulate Alpha by Volume", &_editorPreset.modWaveAlphaByVolume);
+        TRACK_EDITED(ImGui::Checkbox("Modulate Alpha by Volume", &_editorPreset.modWaveAlphaByVolume));
         DrawHelpTooltip("Modulate waveform alpha value by audio volume");
 
-        ImGui::DragFloatRange2("Modulation Range", &_editorPreset.modWaveAlphaStart, &_editorPreset.modWaveAlphaEnd, 0.01, 0.0, 1.0);
+        TRACK_EDITED(ImGui::DragFloatRange2("Modulation Range", &_editorPreset.modWaveAlphaStart, &_editorPreset.modWaveAlphaEnd, 0.01, 0.0, 1.0));
         DrawHelpTooltip("Clamps alpha modulation 0->1 within this relative volume range.");
 
         ImGui::Unindent(16.0f);
@@ -516,6 +567,7 @@ void PresetEditorGUI::DrawWaveformModeSelection()
             if (ImGui::Selectable(waveformModes[index], isSelected))
             {
                 _editorPreset.waveMode = index;
+                _hasUnsavedChanges = true;
             }
 
             if (isSelected)
@@ -540,19 +592,19 @@ void PresetEditorGUI::DrawMotionVectorSettings()
 
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("Size X##MotionVectorX", &_editorPreset.mvX, 0.00f, 64.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Size X##MotionVectorX", &_editorPreset.mvX, 0.00f, 64.0f));
         DrawHelpTooltip("The number of motion vectors in the X direction");
 
-        ImGui::SliderFloat("size Y##MotionVectorY", &_editorPreset.mvY, 0.00f, 48.0f);
+        TRACK_EDITED(ImGui::SliderFloat("size Y##MotionVectorY", &_editorPreset.mvY, 0.00f, 48.0f));
         DrawHelpTooltip("The number of motion vectors in the Y direction");
 
-        ImGui::SliderFloat("Length##MotionVectorLength", &_editorPreset.mvL, 0.00f, 5.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Length##MotionVectorLength", &_editorPreset.mvL, 0.00f, 5.0f));
         DrawHelpTooltip("The length of the motion vectors\n0=no trail, 1=normal, 2=double...");
 
-        ImGui::SliderFloat("X Offset##MotionVectorOffsetX", &_editorPreset.mvDX, -1.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("X Offset##MotionVectorOffsetX", &_editorPreset.mvDX, -1.00f, 1.0f));
         DrawHelpTooltip("Horizontal placement offset of the motion vectors");
 
-        ImGui::SliderFloat("Y Offset##MotionVectorOffsetY", &_editorPreset.mvDY, -1.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Y Offset##MotionVectorOffsetY", &_editorPreset.mvDY, -1.00f, 1.0f));
         DrawHelpTooltip("Vertical placement offset of the motion vectors");
 
         ImGui::Unindent(16.0f);
@@ -562,7 +614,7 @@ void PresetEditorGUI::DrawMotionVectorSettings()
 
         ImGui::Indent(16.0f);
 
-        ImGui::ColorEdit4("Color##MotionVectorColor", &_editorPreset.mvColor.red, ImGuiColorEditFlags_Float);
+        TRACK_EDITED(ImGui::ColorEdit4("Color##MotionVectorColor", &_editorPreset.mvColor.red, ImGuiColorEditFlags_Float));
         DrawHelpTooltip("The color of the motion vector grid");
 
         ImGui::Unindent(16.0f);
@@ -646,10 +698,10 @@ void PresetEditorGUI::DrawWarpMotionSettings()
         ImGui::TextUnformatted("Translation");
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("Horizontal Motion", &_editorPreset.xPush, -1.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Horizontal Motion", &_editorPreset.xPush, -1.00f, 1.0f));
         DrawHelpTooltip("Controls amount of constant horizontal motion.\n-0.01 = move left 1% per frame, 0=none, 0.01 = move right 1%");
 
-        ImGui::SliderFloat("Vertical Motion", &_editorPreset.yPush, -1.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Vertical Motion", &_editorPreset.yPush, -1.00f, 1.0f));
         DrawHelpTooltip("Controls amount of constant vertical motion.\n-0.01 = move up 1% per frame, 0=none, 0.01 = move down 1%");
 
         ImGui::Unindent(16.0f);
@@ -658,13 +710,13 @@ void PresetEditorGUI::DrawWarpMotionSettings()
         ImGui::TextUnformatted("Rotation");
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("Rotation##WarpRotation", &_editorPreset.rot, -1.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Rotation##WarpRotation", &_editorPreset.rot, -1.00f, 1.0f));
         DrawHelpTooltip("Controls the amount of rotation.\n0=none, 0.1=slightly right, -0.1=slightly clockwise, 0.1=CCW");
 
-        ImGui::SliderFloat("Center X##WarpCenterX", &_editorPreset.rotCX, 0.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Center X##WarpCenterX", &_editorPreset.rotCX, 0.00f, 1.0f));
         DrawHelpTooltip("Controls where the center of rotation and stretching is, horizontally.\n0=left, 0.5=center, 1=right");
 
-        ImGui::SliderFloat("Center Y##WarpCenterY", &_editorPreset.rotCY, 0.00f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Center Y##WarpCenterY", &_editorPreset.rotCY, 0.00f, 1.0f));
         DrawHelpTooltip("Controls where the center of rotation and stretching is, vertically.\n0=top, 0.5=center, 1=bottom");
 
         ImGui::Unindent(16.0f);
@@ -673,16 +725,16 @@ void PresetEditorGUI::DrawWarpMotionSettings()
         ImGui::TextUnformatted("Scaling");
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("Stretch X##WarpStretchX", &_editorPreset.stretchX, 0.00f, 2.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Stretch X##WarpStretchX", &_editorPreset.stretchX, 0.00f, 2.0f));
         DrawHelpTooltip("Controls amount of constant horizontal stretching.\n0.99=shrink 1%, 1=normal, 1.01=stretch 1%");
 
-        ImGui::SliderFloat("Stretch Y##WarpStretchY", &_editorPreset.stretchY, 0.00f, 2.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Stretch Y##WarpStretchY", &_editorPreset.stretchY, 0.00f, 2.0f));
         DrawHelpTooltip("Controls amount of constant vertical stretching.\n0.99=shrink 1%, 1=normal, 1.01=stretch 1%");
 
-        ImGui::SliderFloat("Zoom##WarpZoom", &_editorPreset.zoom, 0.00f, 2.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Zoom##WarpZoom", &_editorPreset.zoom, 0.00f, 2.0f));
         DrawHelpTooltip("Controls inward/outward motion.\n0.9=zoom out 10% per frame, 1.0=no zoom, 1.1=zoom in 10%");
 
-        ImGui::SliderFloat("Zoom Exponent##Warp", &_editorPreset.zoomExponent, 0.00f, 5.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Zoom Exponent##Warp", &_editorPreset.zoomExponent, 0.00f, 5.0f));
         DrawHelpTooltip("Controls the curvature of the zoom; 1=normal");
 
         ImGui::Unindent(16.0f);
@@ -691,13 +743,13 @@ void PresetEditorGUI::DrawWarpMotionSettings()
         ImGui::TextUnformatted("Warping");
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("Warp Amount##WarpAmount", &_editorPreset.warpAmount, 0.00f, 10.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Warp Amount##WarpAmount", &_editorPreset.warpAmount, 0.00f, 10.0f));
         DrawHelpTooltip("Controls the magnitude of the warping.\n0=none, 1=normal, 2=major warping...");
 
-        ImGui::SliderFloat("Warp Scale##WarpScale", &_editorPreset.warpScale, 0.00f, 10.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Warp Scale##WarpScale", &_editorPreset.warpScale, 0.00f, 10.0f));
         DrawHelpTooltip("Controls the scale of the warp effect.");
 
-        ImGui::SliderFloat("Warp Animation Speed##WarpAnimSpeed", &_editorPreset.warpAnimSpeed, 0.00f, 5.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Warp Animation Speed##WarpAnimSpeed", &_editorPreset.warpAnimSpeed, 0.00f, 5.0f));
         DrawHelpTooltip("Controls the speed of the warp effect.");
 
         ImGui::Unindent(16.0f);
@@ -718,9 +770,9 @@ void PresetEditorGUI::DrawBorderSettings()
         ImGui::TextUnformatted("Outer Border");
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("Thickness##OuterBorderThickness", &_editorPreset.outerBorderSize, 0.0f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Thickness##OuterBorderThickness", &_editorPreset.outerBorderSize, 0.0f, 1.0f));
         DrawHelpTooltip("Thickness of the outer border drawn at the edges of the screen every frame");
-        ImGui::ColorEdit4("Color##OuterBorderColor", &_editorPreset.outerBorderColor.red, ImGuiColorEditFlags_Float);
+        TRACK_EDITED(ImGui::ColorEdit4("Color##OuterBorderColor", &_editorPreset.outerBorderColor.red, ImGuiColorEditFlags_Float));
         DrawHelpTooltip("Color of the outer border drawn at the edges of the screen every frame");
 
         ImGui::Unindent(16.0f);
@@ -730,10 +782,10 @@ void PresetEditorGUI::DrawBorderSettings()
         ImGui::TextUnformatted("Inner Border");
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("Thickness##InnerBorderThickness", &_editorPreset.innerBorderSize, 0.0f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Thickness##InnerBorderThickness", &_editorPreset.innerBorderSize, 0.0f, 1.0f));
         DrawHelpTooltip("Thickness of the inner border drawn at the edges of the screen every frame");
 
-        ImGui::ColorEdit4("Color##InnerBorderColor", &_editorPreset.innerBorderColor.red, ImGuiColorEditFlags_Float);
+        TRACK_EDITED(ImGui::ColorEdit4("Color##InnerBorderColor", &_editorPreset.innerBorderColor.red, ImGuiColorEditFlags_Float));
         DrawHelpTooltip("Color of the inner border drawn at the edges of the screen every frame");
 
         ImGui::Unindent(16.0f);
@@ -750,7 +802,7 @@ void PresetEditorGUI::DrawCustomWaveSettings(EditorPreset::Wave& waveform)
 
     if (ImGui::CollapsingHeader(std::string("Waveform " + idx).c_str()))
     {
-        ImGui::Checkbox("Enabled", &waveform.enabled);
+        TRACK_EDITED(ImGui::Checkbox("Enabled", &waveform.enabled));
         DrawHelpTooltip("This waveform is only rendered if enabled explicitly.");
 
         ImGui::Spacing();
@@ -760,28 +812,28 @@ void PresetEditorGUI::DrawCustomWaveSettings(EditorPreset::Wave& waveform)
         ImGui::TextUnformatted("Position And Style");
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("X", &waveform.x, 0.0f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("X", &waveform.x, 0.0f, 1.0f));
         DrawHelpTooltip("Horizontal position of the waveform.\n"
                         "0=left, 0.5=center, 1=right");
 
-        ImGui::SliderFloat("Y", &waveform.x, 0.0f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Y", &waveform.x, 0.0f, 1.0f));
         DrawHelpTooltip("Vertical position of the waveform.\n"
                         "0=bottom, 0.5=center, 1=top");
 
-        ImGui::SliderInt("Samples", &waveform.samples, 1, 512);
+        TRACK_EDITED(ImGui::SliderInt("Samples", &waveform.samples, 1, 512));
         DrawHelpTooltip("Number of waveform points to draw.");
 
-        ImGui::SliderInt("Separation", &waveform.sep, 0, 255);
+        TRACK_EDITED(ImGui::SliderInt("Separation", &waveform.sep, 0, 255));
         DrawHelpTooltip("Separation distance of dual waveforms.");
 
-        ImGui::SliderFloat("Scaling", &waveform.scaling, 0.0f, 10.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Scaling", &waveform.scaling, 0.0f, 10.0f));
         DrawHelpTooltip("Waveform value scaling factor.");
 
-        ImGui::SliderFloat("Smoothing", &waveform.smoothing, 0.0f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Smoothing", &waveform.smoothing, 0.0f, 1.0f));
         DrawHelpTooltip("Waveform smoothing value.\n"
                         "0.0=no smoothing, 0.5=default, 1.0=extreme smoothing");
 
-        ImGui::ColorEdit4("Color", &waveform.color.red, ImGuiColorEditFlags_Float);
+        TRACK_EDITED(ImGui::ColorEdit4("Color", &waveform.color.red, ImGuiColorEditFlags_Float));
         DrawHelpTooltip("The default color of the waveform.");
 
         ImGui::Unindent(16.0f);
@@ -790,16 +842,16 @@ void PresetEditorGUI::DrawCustomWaveSettings(EditorPreset::Wave& waveform)
         ImGui::TextUnformatted("Drawing Flags");
         ImGui::Indent(16.0f);
 
-        ImGui::Checkbox("Spectrum", &waveform.spectrum);
+        TRACK_EDITED(ImGui::Checkbox("Spectrum", &waveform.spectrum));
         DrawHelpTooltip("Use spectrum instead of oscilloscope data.");
 
-        ImGui::Checkbox("Dots", &waveform.useDots);
+        TRACK_EDITED(ImGui::Checkbox("Dots", &waveform.useDots));
         DrawHelpTooltip("Draw Waveform as dots instead of lines.");
 
-        ImGui::Checkbox("Thick", &waveform.drawThick);
+        TRACK_EDITED(ImGui::Checkbox("Thick", &waveform.drawThick));
         DrawHelpTooltip("Draw waveform lines or dots twice as thick.");
 
-        ImGui::Checkbox("Additive", &waveform.additive);
+        TRACK_EDITED(ImGui::Checkbox("Additive", &waveform.additive));
         DrawHelpTooltip("Use additive color blending when drawing.");
 
         ImGui::Unindent(16.0f);
@@ -890,7 +942,7 @@ void PresetEditorGUI::DrawCustomShapeSettings(EditorPreset::Shape& shape)
 
     if (ImGui::CollapsingHeader(std::string("Shape " + idx).c_str()))
     {
-        ImGui::Checkbox("Enabled", &shape.enabled);
+        TRACK_EDITED(ImGui::Checkbox("Enabled", &shape.enabled));
         DrawHelpTooltip("This shape is only rendered if enabled explicitly.");
 
         ImGui::Spacing();
@@ -900,33 +952,33 @@ void PresetEditorGUI::DrawCustomShapeSettings(EditorPreset::Shape& shape)
         ImGui::TextUnformatted("Position And Style");
         ImGui::Indent(16.0f);
 
-        ImGui::SliderFloat("X", &shape.x, 0.0f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("X", &shape.x, 0.0f, 1.0f));
         DrawHelpTooltip("Default horizontal position of the shape.\n"
                         "0=left, 0.5=center, 1=right");
 
-        ImGui::SliderFloat("Y", &shape.y, 0.0f, 1.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Y", &shape.y, 0.0f, 1.0f));
         DrawHelpTooltip("Default vertical position of the shape.\n"
                         "0=bottom, 0.5=center, 1=top");
 
-        ImGui::SliderFloat("Radius", &shape.radius, 0.001f, 10.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Radius", &shape.radius, 0.001f, 10.0f));
         DrawHelpTooltip("Default radius of the shape.");
 
-        ImGui::SliderFloat("Angle", &shape.angle, 0.0f, 2 * 3.14159265358979323846);
+        TRACK_EDITED(ImGui::SliderFloat("Angle", &shape.angle, 0.0f, 2 * 3.14159265358979323846));
         DrawHelpTooltip("Default rotation angle of the shape.");
 
-        ImGui::SliderInt("Sides", &shape.sides, 3, 100);
+        TRACK_EDITED(ImGui::SliderInt("Sides", &shape.sides, 3, 100));
         DrawHelpTooltip("The default number of sides that make up the polygonal shape.");
 
-        ImGui::SliderInt("Instances", &shape.instances, 1, 1024);
+        TRACK_EDITED(ImGui::SliderInt("Instances", &shape.instances, 1, 1024));
         DrawHelpTooltip("The total number of instances (the number of times to repeat the per-frame equations for, and draw, this shape).");
 
-        ImGui::ColorEdit4("Inner Color", &shape.color.red, ImGuiColorEditFlags_Float);
+        TRACK_EDITED(ImGui::ColorEdit4("Inner Color", &shape.color.red, ImGuiColorEditFlags_Float));
         DrawHelpTooltip("The default color and opacity towards the center of the shape.");
 
-        ImGui::ColorEdit4("Outer Color", &shape.color2.red, ImGuiColorEditFlags_Float);
+        TRACK_EDITED(ImGui::ColorEdit4("Outer Color", &shape.color2.red, ImGuiColorEditFlags_Float));
         DrawHelpTooltip("The default color and opacity towards the outer edge of the shape");
 
-        ImGui::ColorEdit4("Border Color", &shape.borderColor.red, ImGuiColorEditFlags_Float);
+        TRACK_EDITED(ImGui::ColorEdit4("Border Color", &shape.borderColor.red, ImGuiColorEditFlags_Float));
         DrawHelpTooltip("The default color and opacity of the border of the shape");
 
         ImGui::Unindent(16.0f);
@@ -935,15 +987,15 @@ void PresetEditorGUI::DrawCustomShapeSettings(EditorPreset::Shape& shape)
         ImGui::TextUnformatted("Texturing");
         ImGui::Indent(16.0f);
 
-        ImGui::Checkbox("Textured", &shape.textured);
+        TRACK_EDITED(ImGui::Checkbox("Textured", &shape.textured));
         DrawHelpTooltip("If enabled, the shape will be textured with the image from the previous frame.");
 
         ImGui::BeginDisabled(!shape.textured);
 
-        ImGui::SliderFloat("Angle##Texture", &shape.tex_ang, 0.0f, 2 * 3.14159265358979323846);
+        TRACK_EDITED(ImGui::SliderFloat("Angle##Texture", &shape.tex_ang, 0.0f, 2 * 3.14159265358979323846));
         DrawHelpTooltip("The angle at which to rotate the previous frame's image before applying it to the shape.");
 
-        ImGui::SliderFloat("Zoom##Texture", &shape.tex_zoom, 0.001f, 10.0f);
+        TRACK_EDITED(ImGui::SliderFloat("Zoom##Texture", &shape.tex_zoom, 0.001f, 10.0f));
         DrawHelpTooltip("The portion of the previous frame's image to use with the shape.");
 
         ImGui::EndDisabled();
@@ -953,10 +1005,10 @@ void PresetEditorGUI::DrawCustomShapeSettings(EditorPreset::Shape& shape)
 
         ImGui::TextUnformatted("Drawing Flags");
         ImGui::Indent(16.0f);
-        ImGui::Checkbox("Thick Outline", &shape.thickOutline);
+        TRACK_EDITED(ImGui::Checkbox("Thick Outline", &shape.thickOutline));
         DrawHelpTooltip("If enabled, the border will be overdrawn 4 times to make it thicker, bolder, and more visible.");
 
-        ImGui::Checkbox("Additive", &shape.additive);
+        TRACK_EDITED(ImGui::Checkbox("Additive", &shape.additive));
         DrawHelpTooltip("If enabled, the shape will add color to saturate the image toward white; otherwise, it will replace what's there.");
 
         ImGui::Unindent(16.0f);

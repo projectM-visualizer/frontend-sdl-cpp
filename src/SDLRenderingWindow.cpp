@@ -393,7 +393,10 @@ void SDLRenderingWindow::UpdateWindowTitle(const std::string& customTitle)
 {
     if (!customTitle.empty())
     {
-        SDL_SetWindowTitle(_renderingWindow, customTitle.c_str());
+        if (SDL_GetWindowTitle(_renderingWindow) != customTitle)
+        {
+            SDL_SetWindowTitle(_renderingWindow, customTitle.c_str());
+        }
         return;
     }
 

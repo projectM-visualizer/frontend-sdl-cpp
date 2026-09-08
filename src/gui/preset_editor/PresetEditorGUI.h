@@ -36,6 +36,12 @@ public:
     void Close();
 
     /**
+     * Returns whether the editor UI can be discarded or not, e.g. after a preset has been saved.
+     * @return true if the preset editor can be destroyed, false if not.
+     */
+    bool Done() const;
+
+    /**
      * @brief Draws the preset editor.
      * @return true if the preset editor is visible and has been drawn, false otherwise.
      */
@@ -55,6 +61,7 @@ private:
     void HandleGlobalEditorKeys();
     void TakeProjectMControl();
     void ReleaseProjectMControl();
+    void UpdateWindowTitle();
 
     void EditCode(ExpressionCodeTypes type, std::string& code, int index = 0);
 
@@ -84,6 +91,7 @@ private:
 
     bool _wantClose{false};
     bool _visible{false}; //!< true if the editor is visible, false if not.
+    bool _hasUnsavedChanges{false}; //!< true if the user made any changes to the preset.
 
     EditorMenu _menu; //!< The editor-specific main menu bar.
 
@@ -92,7 +100,6 @@ private:
     EditorPreset _editorPreset; //!< The preset data in a parsed, strongly-typed container.
 
     std::unique_ptr<CodeEditorWindow> _codeEditorWindow; //!< The code editor window.
-
 };
 
 } // namespace Editor

@@ -35,6 +35,7 @@ void CodeEditorWindow::Draw()
                 {
                     if (it->Draw())
                     {
+                        _isTextChanged |= it->IsTextChanged();
                         ++it;
                         continue;
                     }
@@ -56,6 +57,7 @@ void CodeEditorWindow::Draw()
     if (_codeEditorTabs.empty())
     {
         _visible = false;
+        _isTextChanged = false;
     }
 
     ImGui::PopID();
@@ -81,6 +83,11 @@ void CodeEditorWindow::OpenCodeInTab(ExpressionCodeTypes type, std::string& code
     _codeEditorTabs.push_back(std::move(newCodeEditorTab));
 
     _visible = true;
+}
+
+bool CodeEditorWindow::IsTextChanged() const
+{
+    return _isTextChanged;
 }
 
 
