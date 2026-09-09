@@ -153,6 +153,7 @@ protected:
     bool _showHidden{ false }; //!< If true, hidden files/dirs are shown.
     bool _multiSelect{ false }; //!< If true, selecting multiple files/directories is allowed.
     Poco::Path _currentDir{ Poco::Path::current() }; //!< Current working dir.
+    std::string _currentDirString{ _currentDir.toString() }; //!< Current working dir as string for editing.
     std::vector<Poco::File> _currentFileList; //!< File list of current directory
     std::vector<Poco::File> _selectedFiles; //!< Currently selected file(s).
     int _selectedFileIndex{ 0 }; //!< Last selected item in the file list.

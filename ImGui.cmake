@@ -10,6 +10,8 @@ add_library(ImGui STATIC
         vendor/imgui/backends/imgui_impl_opengl3.cpp
         vendor/imgui/backends/imgui_impl_opengl3.h
         vendor/imgui/backends/imgui_impl_opengl3_loader.h
+        vendor/imgui/misc/cpp/imgui_stdlib.cpp
+        vendor/imgui/misc/cpp/imgui_stdlib.h
         )
 
 target_link_libraries(ImGui
@@ -39,6 +41,7 @@ target_include_directories(ImGui
         PUBLIC
         ${CMAKE_SOURCE_DIR}/vendor/imgui
         ${CMAKE_SOURCE_DIR}/vendor/imgui/backends
+        ${CMAKE_SOURCE_DIR}/vendor/imgui/misc/cpp
         ${SDL2_INCLUDE_DIRS}
         )
 

@@ -1,6 +1,7 @@
 #include "FileChooser.h"
 
 #include "imgui.h"
+#include "imgui_stdlib.h"
 
 #include <Poco/SortedDirectoryIterator.h>
 #include <Poco/String.h>
@@ -105,14 +106,11 @@ bool FileChooser::Draw()
 
         ImGui::Separator();
 
-        char pathBuffer[2048]{};
-        strncpy(pathBuffer, _currentDir.toString().c_str(), std::min<size_t>(2047, _currentDir.toString().size()));
-
         ImGui::SetNextItemWidth(-1);
 
-        if (ImGui::InputText("##path", &pathBuffer[0], IM_ARRAYSIZE(pathBuffer)), ImGuiInputTextFlags_EnterReturnsTrue)
+        if (ImGui::InputText("##path", &_currentDirString, ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            ChangeDirectory(std::string(pathBuffer));
+            ChangeDirectory(_currentDirString);
         }
 
         if (ImGui::BeginListBox("##filelist", ImVec2(-1, -ImGui::GetTextLineHeight() - ImGui::GetStyle().FramePadding.y * 2 - 4)))
