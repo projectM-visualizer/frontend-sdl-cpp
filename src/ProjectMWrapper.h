@@ -1,7 +1,7 @@
 #pragma once
 
-#include "notifications/AudioDataAvailableNotification.h"
-#include "notifications/PlaybackControlNotification.h"
+#include "notifications/AudioDataAvailable.h"
+#include "notifications/PlaybackControl.h"
 
 #include <projectM-4/projectM.h>
 #include <projectM-4/playlist.h>
@@ -90,9 +90,9 @@ private:
      */
     static void PresetSwitchedEvent(bool isHardCut, unsigned int index, void* context);
 
-    void PlaybackControlNotificationHandler(const Poco::AutoPtr<PlaybackControlNotification>& notification);
+    void PlaybackControlNotificationHandler(const Poco::AutoPtr<Notification::PlaybackControl>& notification);
 
-    void AudioDataAvailableNotificationHandler(const Poco::AutoPtr<AudioDataAvailableNotification>& notification);
+    void AudioDataAvailableNotificationHandler(const Poco::AutoPtr<Notification::AudioDataAvailable>& notification);
 
     std::vector<std::string> GetPathListWithDefault(const std::string& baseKey, const std::string& defaultPath);
 
@@ -118,8 +118,8 @@ private:
     std::vector<float> _audioStagingBuffer; //!< Buffer which receives audio data from the capture implementation.
     mutable Poco::Mutex _audioBufferMutex; //!< Mutex protecting access to the audio staging buffer.
 
-    Poco::NObserver<ProjectMWrapper, PlaybackControlNotification> _playbackControlNotificationObserver{*this, &ProjectMWrapper::PlaybackControlNotificationHandler};
-    Poco::NObserver<ProjectMWrapper, AudioDataAvailableNotification> _audioDataAvailableNotificationObserver{*this, &ProjectMWrapper::AudioDataAvailableNotificationHandler};
+    Poco::NObserver<ProjectMWrapper, Notification::PlaybackControl> _playbackControlNotificationObserver{*this, &ProjectMWrapper::PlaybackControlNotificationHandler};
+    Poco::NObserver<ProjectMWrapper, Notification::AudioDataAvailable> _audioDataAvailableNotificationObserver{*this, &ProjectMWrapper::AudioDataAvailableNotificationHandler};
 
     Poco::Logger& _logger{Poco::Logger::get("SDLRenderingWindow")}; //!< The class logger.
 };

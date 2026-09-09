@@ -1,6 +1,6 @@
 #include "AudioCaptureImpl_WASAPI.h"
 
-#include "notifications/AudioDataAvailableNotification.h"
+#include "notifications/AudioDataAvailable.h"
 
 #include <Poco/UnicodeConverter.h>
 
@@ -448,7 +448,7 @@ void AudioCaptureImpl::CaptureThread()
                 if (framesAvailable > 0 && data != nullptr)
                 {
                     Poco::NotificationCenter::defaultCenter().postNotification(
-                        new AudioDataAvailableNotification(_channels,
+                        new Notification::AudioDataAvailable(_channels,
                                                            reinterpret_cast<float*>(data),
                                                            framesAvailable * _channels));
                 }

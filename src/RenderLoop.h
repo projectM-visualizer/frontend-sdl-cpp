@@ -4,7 +4,7 @@
 #include "ProjectMWrapper.h"
 #include "SDLRenderingWindow.h"
 
-#include "notifications/QuitNotification.h"
+#include "notifications/Quit.h"
 
 #include <Poco/Logger.h>
 #include <Poco/NObserver.h>
@@ -70,7 +70,7 @@ protected:
      * @brief Handler for quit notifications.
      * @param notification The received notification.
      */
-    void QuitNotificationHandler(const Poco::AutoPtr<QuitNotification>& notification);
+    void QuitNotificationHandler(const Poco::AutoPtr<Notification::Quit>& notification);
 
     AudioCapture& _audioCapture;
     ProjectMWrapper& _projectMWrapper;
@@ -81,7 +81,7 @@ protected:
 
     ProjectMGUI& _projectMGui;
 
-    Poco::NObserver<RenderLoop, QuitNotification> _quitNotificationObserver{*this, &RenderLoop::QuitNotificationHandler}; //!< The observer for quit notifications.
+    Poco::NObserver<RenderLoop, Notification::Quit> _quitNotificationObserver{*this, &RenderLoop::QuitNotificationHandler}; //!< The observer for quit notifications.
 
     bool _wantsToQuit{false};
 

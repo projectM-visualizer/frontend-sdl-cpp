@@ -234,7 +234,7 @@ float ProjectMGUI::GetClampedUserScalingFactor()
     return std::min(3.0f, std::max(0.1f, static_cast<float>(Poco::Util::Application::instance().config().getDouble("window.uiScale", 1.0))));
 }
 
-void ProjectMGUI::DisplayToastNotificationHandler(const Poco::AutoPtr<DisplayToastNotification>& notification)
+void ProjectMGUI::DisplayToastNotificationHandler(const Poco::AutoPtr<Notification::DisplayToast>& notification)
 {
     if (Poco::Util::Application::instance().config().getBool("projectM.displayToasts", true))
     {

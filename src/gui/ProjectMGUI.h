@@ -6,7 +6,7 @@
 #include "SettingsWindow.h"
 #include "ToastMessage.h"
 
-#include "notifications/DisplayToastNotification.h"
+#include "notifications/DisplayToast.h"
 
 #include <SDL2/SDL.h>
 
@@ -109,11 +109,11 @@ private:
 
     static float GetClampedUserScalingFactor();
 
-    void DisplayToastNotificationHandler(const Poco::AutoPtr<DisplayToastNotification>& notification);
+    void DisplayToastNotificationHandler(const Poco::AutoPtr<Notification::DisplayToast>& notification);
 
     ProjectMWrapper* _projectMWrapper{nullptr};
 
-    Poco::NObserver<ProjectMGUI, DisplayToastNotification> _displayToastNotificationObserver{*this, &ProjectMGUI::DisplayToastNotificationHandler};
+    Poco::NObserver<ProjectMGUI, Notification::DisplayToast> _displayToastNotificationObserver{*this, &ProjectMGUI::DisplayToastNotificationHandler};
 
     std::string _uiIniFileName; //!< Path and filename of the UI configuration (positions etc.)
 

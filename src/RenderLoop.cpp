@@ -136,7 +136,7 @@ void RenderLoop::PollEvents()
                         if (!droppedFile.exists() || (droppedFileP.getExtension() != "milk" && droppedFileP.getExtension() != "prjm"))
                         {
                             std::string toastMessage = std::string("Invalid preset file: ") + droppedFilePath;
-                            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
+                            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
                             poco_information_f1(_logger, "%s", toastMessage);
                             break; // exit the block and go to the shuffle check
                         }
@@ -173,12 +173,12 @@ void RenderLoop::PollEvents()
                                 // if skip to dropped is true, or if a folder was dropped and it overrode the playlist, we skip to the next preset
                                 projectm_playlist_play_next(_playlistHandle, true);
                             }
-                            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
+                            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
                         }
                         else
                         {
                             std::string toastMessage = std::string("No presets found in: ") + droppedFilePath;
-                            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(toastMessage));
+                            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
                             poco_information_f1(_logger, "%s", toastMessage);
                         }
                     }
@@ -312,15 +312,15 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
             break;
 
         case SDLK_n:
-            Poco::NotificationCenter::defaultCenter().postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::NextPreset, _keyStates._shiftPressed));
+            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::NextPreset, _keyStates._shiftPressed));
             break;
 
         case SDLK_p:
-            Poco::NotificationCenter::defaultCenter().postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::PreviousPreset, _keyStates._shiftPressed));
+            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::PreviousPreset, _keyStates._shiftPressed));
             break;
 
         case SDLK_r: {
-            Poco::NotificationCenter::defaultCenter().postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::RandomPreset, _keyStates._shiftPressed));
+            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::RandomPreset, _keyStates._shiftPressed));
             break;
         }
 
@@ -332,15 +332,15 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
             break;
 
         case SDLK_y:
-            Poco::NotificationCenter::defaultCenter().postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::ToggleShuffle));
+            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::ToggleShuffle));
             break;
 
         case SDLK_BACKSPACE:
-            Poco::NotificationCenter::defaultCenter().postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::LastPreset, _keyStates._shiftPressed));
+            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::LastPreset, _keyStates._shiftPressed));
             break;
 
         case SDLK_SPACE:
-            Poco::NotificationCenter::defaultCenter().postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::TogglePresetLocked));
+            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::TogglePresetLocked));
             break;
 
         case SDLK_UP:
@@ -425,7 +425,7 @@ void RenderLoop::MouseUpEvent(const SDL_MouseButtonEvent& event)
     }
 }
 
-void RenderLoop::QuitNotificationHandler(const Poco::AutoPtr<QuitNotification>& notification)
+void RenderLoop::QuitNotificationHandler(const Poco::AutoPtr<Notification::Quit>& notification)
 {
     _wantsToQuit = true;
 }

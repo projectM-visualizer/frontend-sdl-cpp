@@ -3,7 +3,7 @@
 #include "ProjectMSDLApplication.h"
 #include "SDLRenderingWindow.h"
 
-#include "notifications/DisplayToastNotification.h"
+#include "notifications/DisplayToast.h"
 
 #include <Poco/Delegate.h>
 #include <Poco/File.h>
@@ -201,7 +201,7 @@ void ProjectMWrapper::ChangeBeatSensitivity(float value)
 {
     projectm_set_beat_sensitivity(_projectM, projectm_get_beat_sensitivity(_projectM) + value);
     Poco::NotificationCenter::defaultCenter().postNotification(
-        new DisplayToastNotification(Poco::format("Beat Sensitivity: %.2hf", projectm_get_beat_sensitivity(_projectM))));
+        new Notification::DisplayToast(Poco::format("Beat Sensitivity: %.2hf", projectm_get_beat_sensitivity(_projectM))));
 }
 
 std::string ProjectMWrapper::ProjectMBuildVersion()
@@ -232,50 +232,50 @@ void ProjectMWrapper::PresetSwitchedEvent(bool isHardCut, unsigned int index, vo
     poco_information_f1(that->_logger, "Displaying preset: %s", std::string(presetName));
     projectm_playlist_free_string(presetName);
 
-    Poco::NotificationCenter::defaultCenter().postNotification(new UpdateWindowTitleNotification);
+    Poco::NotificationCenter::defaultCenter().postNotification(new Notification::UpdateWindowTitle);
 }
 
-void ProjectMWrapper::PlaybackControlNotificationHandler(const Poco::AutoPtr<PlaybackControlNotification>& notification)
+void ProjectMWrapper::PlaybackControlNotificationHandler(const Poco::AutoPtr<Notification::PlaybackControl>& notification)
 {
     bool shuffleEnabled = projectm_playlist_get_shuffle(_playlist);
 
     switch (notification->ControlAction())
     {
-        case PlaybackControlNotification::Action::NextPreset:
+        case Notification::PlaybackControl::Action::NextPreset:
             projectm_playlist_set_shuffle(_playlist, false);
             projectm_playlist_play_next(_playlist, !notification->SmoothTransition());
             projectm_playlist_set_shuffle(_playlist, shuffleEnabled);
             break;
 
-        case PlaybackControlNotification::Action::PreviousPreset:
+        case Notification::PlaybackControl::Action::PreviousPreset:
             projectm_playlist_set_shuffle(_playlist, false);
             projectm_playlist_play_previous(_playlist, !notification->SmoothTransition());
             projectm_playlist_set_shuffle(_playlist, shuffleEnabled);
             break;
 
-        case PlaybackControlNotification::Action::LastPreset:
+        case Notification::PlaybackControl::Action::LastPreset:
             projectm_playlist_play_last(_playlist, !notification->SmoothTransition());
             break;
 
-        case PlaybackControlNotification::Action::RandomPreset: {
+        case Notification::PlaybackControl::Action::RandomPreset: {
             projectm_playlist_set_shuffle(_playlist, true);
             projectm_playlist_play_next(_playlist, !notification->SmoothTransition());
             projectm_playlist_set_shuffle(_playlist, shuffleEnabled);
             break;
         }
 
-        case PlaybackControlNotification::Action::ToggleShuffle:
+        case Notification::PlaybackControl::Action::ToggleShuffle:
             _userConfig->setBool("projectM.shuffleEnabled", !shuffleEnabled);
             break;
 
-        case PlaybackControlNotification::Action::TogglePresetLocked: {
+        case Notification::PlaybackControl::Action::TogglePresetLocked: {
             _userConfig->setBool("projectM.presetLocked", !projectm_get_preset_locked(_projectM));
             break;
         }
     }
 }
 
-void ProjectMWrapper::AudioDataAvailableNotificationHandler(const Poco::AutoPtr<AudioDataAvailableNotification>& notification)
+void ProjectMWrapper::AudioDataAvailableNotificationHandler(const Poco::AutoPtr<Notification::AudioDataAvailable>& notification)
 {
     Poco::ScopedLock lock(_audioBufferMutex);
 
@@ -327,7 +327,7 @@ void ProjectMWrapper::OnConfigurationPropertyRemoved(const std::string& key)
     if (key == "projectM.presetLocked")
     {
         projectm_set_preset_locked(_projectM, _projectMConfigView->getBool("presetLocked", false));
-        Poco::NotificationCenter::defaultCenter().postNotification(new UpdateWindowTitleNotification);
+        Poco::NotificationCenter::defaultCenter().postNotification(new Notification::UpdateWindowTitle);
     }
 
     if (key == "projectM.shuffleEnabled")

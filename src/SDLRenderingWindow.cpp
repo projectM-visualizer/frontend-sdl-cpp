@@ -384,7 +384,7 @@ SDL_GLContext SDLRenderingWindow::GetGlContext() const
     return _glContext;
 }
 
-void SDLRenderingWindow::UpdateWindowTitleNotificationHandler(POCO_UNUSED const Poco::AutoPtr<UpdateWindowTitleNotification>& notification)
+void SDLRenderingWindow::UpdateWindowTitleNotificationHandler(POCO_UNUSED const Poco::AutoPtr<Notification::UpdateWindowTitle>& notification)
 {
     UpdateWindowTitle();
 }
