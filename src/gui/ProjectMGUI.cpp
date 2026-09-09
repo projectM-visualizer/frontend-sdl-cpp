@@ -123,8 +123,13 @@ bool ProjectMGUI::Visible() const
 
 void ProjectMGUI::Draw()
 {
+    // Reset key/mouse capture flags in case ImGui enabled them in the previous frame
+    auto& io = ImGui::GetIO();
+    io.WantCaptureKeyboard = false;
+    io.WantCaptureMouse = false;
+
     // Don't render UI at all if there's no need.
-    if (!_toast && !_visible)
+    if (!_toast && !_visible && !_presetChooser)
     {
         return;
     }
@@ -155,6 +160,14 @@ void ProjectMGUI::Draw()
         if (!_toast->Draw(secondsSinceLastFrame))
         {
             _toast.reset();
+        }
+    }
+
+    if (_presetChooser)
+    {
+        if (!_presetChooser->Draw())
+        {
+            _presetChooser.reset();
         }
     }
 
@@ -210,6 +223,21 @@ void ProjectMGUI::ShowAboutWindow()
 void ProjectMGUI::ShowHelpWindow()
 {
     _helpWindow.Show();
+}
+
+void ProjectMGUI::ShowPresetChooser()
+{
+    if (_presetChooser)
+    {
+        return;
+    }
+
+    _presetChooser = std::make_unique<PresetChooser>(_projectMWrapper->Playlist().Items(), _projectMWrapper->Playlist().CurrentIndex());
+}
+
+void ProjectMGUI::ClosePresetChooser()
+{
+    _presetChooser.reset();
 }
 
 float ProjectMGUI::GetScalingFactor()

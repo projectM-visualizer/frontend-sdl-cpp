@@ -308,6 +308,7 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
                 _sdlRenderingWindow.NextDisplay();
                 break;
             }
+            _projectMGui.ShowPresetChooser();
             break;
 
         case SDLK_n:

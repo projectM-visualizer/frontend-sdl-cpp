@@ -3,6 +3,7 @@
 #include "AboutWindow.h"
 #include "HelpWindow.h"
 #include "MainMenu.h"
+#include "PresetChooser.h"
 #include "SettingsWindow.h"
 #include "ToastMessage.h"
 
@@ -104,6 +105,16 @@ public:
      */
     void ShowHelpWindow();
 
+    /**
+     * @brief Displays the preset chooser window.
+     */
+    void ShowPresetChooser();
+
+    /**
+     * @brief Closes the preset chooser window.
+     */
+    void ClosePresetChooser();
+
 private:
     float GetScalingFactor();
 
@@ -131,6 +142,7 @@ private:
     SettingsWindow _settingsWindow{*this}; //!< The settings window.
     AboutWindow _aboutWindow{*this}; //!< The about window.
     HelpWindow _helpWindow; //!< Help window with shortcuts and tips.
+    std::unique_ptr<PresetChooser> _presetChooser; //!< Preset quick search/filter popup.
 
     std::unique_ptr<ToastMessage> _toast; //!< Current toast to be displayed.
 
