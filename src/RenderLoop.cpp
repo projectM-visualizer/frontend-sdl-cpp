@@ -17,7 +17,6 @@ RenderLoop::RenderLoop()
     , _projectMWrapper(Poco::Util::Application::instance().getSubsystem<ProjectMWrapper>())
     , _sdlRenderingWindow(Poco::Util::Application::instance().getSubsystem<SDLRenderingWindow>())
     , _projectMHandle(_projectMWrapper.ProjectM())
-    , _playlistHandle(_projectMWrapper.Playlist())
     , _projectMGui(Poco::Util::Application::instance().getSubsystem<ProjectMGUI>())
     , _userConfig(ProjectMSDLApplication::instance().UserConfiguration())
 {
@@ -53,8 +52,6 @@ void RenderLoop::Run()
     }
 
     notificationCenter.removeObserver(_quitNotificationObserver);
-
-    projectm_playlist_set_preset_switched_event_callback(_playlistHandle, nullptr, nullptr);
 }
 
 void RenderLoop::PollEvents()
@@ -115,16 +112,15 @@ void RenderLoop::PollEvents()
                 bool skipToDropped = _userConfig->getBool("projectM.skipToDropped", true);
                 bool droppedFolderOverride = _userConfig->getBool("projectM.droppedFolderOverride", false);
 
-
-                bool shuffle = projectm_playlist_get_shuffle(_playlistHandle);
+                bool shuffle = _projectMWrapper.Playlist().ShuffleEnabled();
                 if (shuffle && skipToDropped)
                 {
                     // if shuffle is enabled, we disable it temporarily, so the dropped preset is played next
                     // if skipToDropped is false, we also keep shuffle enabled, as it doesn't matter since the current preset is unaffected
-                    projectm_playlist_set_shuffle(_playlistHandle, false);
+                    _projectMWrapper.Playlist().ShuffleEnabled(false);
                 }
 
-                int index = projectm_playlist_get_position(_playlistHandle) + 1;
+                auto insertIndex = _projectMWrapper.Playlist().CurrentIndex() + 1;
 
                 do
                 {
@@ -141,11 +137,11 @@ void RenderLoop::PollEvents()
                             break; // exit the block and go to the shuffle check
                         }
 
-                        if (projectm_playlist_insert_preset(_playlistHandle, droppedFilePath, index, true))
+                        if (_projectMWrapper.Playlist().InsertItem(PresetPlaylist::Item(droppedFileP.toString()), insertIndex, true))
                         {
                             if (skipToDropped)
                             {
-                                projectm_playlist_play_next(_playlistHandle, true);
+                                _projectMWrapper.Playlist().Next(true);
                             }
                             poco_information_f1(_logger, "Added preset: %s", std::string(droppedFilePath));
                             // no need to toast single presets, as its obvious if a preset was loaded.
@@ -154,16 +150,17 @@ void RenderLoop::PollEvents()
                     else
                     {
                         // handle dropped directory
+                        _projectMWrapper.Playlist().BeginBatchEdit();
 
                         // if droppedFolderOverride is enabled, we clear the playlist first
                         // current edge case: if the dropped directory is invalid or contains no presets, then it still clears the playlist
                         if (droppedFolderOverride)
                         {
-                            projectm_playlist_clear(_playlistHandle);
-                            index = 0;
+                            _projectMWrapper.Playlist().Clear();
+                            insertIndex = 0;
                         }
 
-                        uint32_t addedFilesCount = projectm_playlist_insert_path(_playlistHandle, droppedFilePath, index, true, true);
+                        uint32_t addedFilesCount = _projectMWrapper.Playlist().InsertPath(droppedFilePath, insertIndex, true, true);
                         if (addedFilesCount > 0)
                         {
                             std::string toastMessage = "Added " + std::to_string(addedFilesCount) + " presets from " + droppedFilePath;
@@ -171,7 +168,7 @@ void RenderLoop::PollEvents()
                             if (skipToDropped || droppedFolderOverride)
                             {
                                 // if skip to dropped is true, or if a folder was dropped and it overrode the playlist, we skip to the next preset
-                                projectm_playlist_play_next(_playlistHandle, true);
+                                _projectMWrapper.Playlist().Next(true);
                             }
                             Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
                         }
@@ -181,12 +178,14 @@ void RenderLoop::PollEvents()
                             Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
                             poco_information_f1(_logger, "%s", toastMessage);
                         }
+
+                        _projectMWrapper.Playlist().EndBatchEdit();
                     }
                 } while (false);
 
                 if (shuffle && skipToDropped)
                 {
-                    projectm_playlist_set_shuffle(_playlistHandle, true);
+                    _projectMWrapper.Playlist().ShuffleEnabled(true);
                 }
 
                 SDL_free(droppedFilePath);
@@ -360,12 +359,12 @@ void RenderLoop::ScrollEvent(const SDL_MouseWheelEvent& event)
     // Wheel up is positive
     if (event.y > 0)
     {
-        projectm_playlist_play_next(_playlistHandle, true);
+        _projectMWrapper.Playlist().Next(true);
     }
     // Wheel down is negative
     else if (event.y < 0)
     {
-        projectm_playlist_play_previous(_playlistHandle, true);
+        _projectMWrapper.Playlist().Previous(true);
     }
 }
 

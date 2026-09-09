@@ -77,7 +77,6 @@ protected:
     SDLRenderingWindow& _sdlRenderingWindow;
 
     projectm_handle _projectMHandle{nullptr};
-    projectm_playlist_handle _playlistHandle{nullptr};
 
     ProjectMGUI& _projectMGui;
 

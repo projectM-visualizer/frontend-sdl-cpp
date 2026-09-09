@@ -20,6 +20,8 @@ add_executable(projectMSDL WIN32 MACOSX_BUNDLE
         SDLRenderingWindow.h
         main.cpp
         projectMSDL.rc
+        PresetPlaylist.cpp
+        PresetPlaylist.h
         )
 
 string(TIMESTAMP BUILD_YEAR "%Y" UTC)

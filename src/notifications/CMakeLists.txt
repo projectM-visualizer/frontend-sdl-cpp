@@ -5,6 +5,8 @@ add_library(ProjectMSDL-Notifications STATIC
         DisplayToast.h
         PlaybackControl.cpp
         PlaybackControl.h
+        PlaylistChanged.cpp
+        PlaylistChanged.h
         Quit.cpp
         Quit.h
         UpdateWindowTitle.cpp

@@ -29,7 +29,7 @@ void PresetSelection::Draw()
         if (ImGui::SliderInt("Playlist Position", reinterpret_cast<int*>(&_playlistPosition), 0, _playlistSize - 1))
         {
             auto& projectMWrapper = Poco::Util::Application::instance().getSubsystem<ProjectMWrapper>();
-            projectm_playlist_set_position(projectMWrapper.Playlist(), _playlistPosition, true);
+            projectMWrapper.Playlist().CurrentIndex(_playlistPosition, true);
         }
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -45,10 +45,7 @@ void PresetSelection::Draw()
         if (ImGui::Button("Random Preset"))
         {
             auto& projectMWrapper = Poco::Util::Application::instance().getSubsystem<ProjectMWrapper>();
-            bool shuffleEnabled = projectm_playlist_get_shuffle(projectMWrapper.Playlist());
-            projectm_playlist_set_shuffle(projectMWrapper.Playlist(), true);
-            projectm_playlist_play_next(projectMWrapper.Playlist(), true);
-            projectm_playlist_set_shuffle(projectMWrapper.Playlist(), shuffleEnabled);
+            projectMWrapper.Playlist().Random(true);
         }
 
         ImGui::SameLine();
