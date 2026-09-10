@@ -8,7 +8,6 @@
 
 #include <Poco/Logger.h>
 #include <Poco/NObserver.h>
-#include <Poco/Notification.h>
 
 class ProjectMGUI;
 
@@ -52,7 +51,7 @@ protected:
      * @brief Handles SDL mouse wheel events.
      * @param event The mouse wheel event
      */
-    void ScrollEvent(const SDL_MouseWheelEvent& event);
+    void ScrollEvent(const SDL_MouseWheelEvent& event) const;
 
     /**
      * @brief Handles SDL mouse button down events.
@@ -71,6 +70,12 @@ protected:
      * @param notification The received notification.
      */
     void QuitNotificationHandler(const Poco::AutoPtr<Notification::Quit>& notification);
+
+    /**
+     * Handles a file/dir drop event into the window.
+     * @param event The drop event from SDL
+     */
+    void HandleDropEvent(const SDL_Event& event);
 
     AudioCapture& _audioCapture;
     ProjectMWrapper& _projectMWrapper;

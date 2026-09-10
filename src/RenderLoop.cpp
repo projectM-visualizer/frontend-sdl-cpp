@@ -104,91 +104,7 @@ void RenderLoop::PollEvents()
                 break;
 
             case SDL_DROPFILE: {
-                char* droppedFilePath = event.drop.file;
-
-                // first we want to get the config settings that are relevant ehre
-                // namely skipToDropped and droppedFolderOverride
-                // we can get them from the projectMWrapper, in the _projectMConfigView available on it
-                bool skipToDropped = _userConfig->getBool("projectM.skipToDropped", true);
-                bool droppedFolderOverride = _userConfig->getBool("projectM.droppedFolderOverride", false);
-
-                bool shuffle = _projectMWrapper.Playlist().ShuffleEnabled();
-                if (shuffle && skipToDropped)
-                {
-                    // if shuffle is enabled, we disable it temporarily, so the dropped preset is played next
-                    // if skipToDropped is false, we also keep shuffle enabled, as it doesn't matter since the current preset is unaffected
-                    _projectMWrapper.Playlist().ShuffleEnabled(false);
-                }
-
-                auto insertIndex = _projectMWrapper.Playlist().CurrentIndex() + 1;
-
-                do
-                {
-                    Poco::File droppedFile(droppedFilePath);
-                    if (!droppedFile.isDirectory())
-                    {
-                        // handle dropped preset file
-                        Poco::Path droppedFileP(droppedFilePath);
-                        if (!droppedFile.exists() || (droppedFileP.getExtension() != "milk" && droppedFileP.getExtension() != "prjm"))
-                        {
-                            std::string toastMessage = std::string("Invalid preset file: ") + droppedFilePath;
-                            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
-                            poco_information_f1(_logger, "%s", toastMessage);
-                            break; // exit the block and go to the shuffle check
-                        }
-
-                        if (_projectMWrapper.Playlist().InsertItem(PresetPlaylist::Item(droppedFileP.toString()), insertIndex, true))
-                        {
-                            if (skipToDropped)
-                            {
-                                _projectMWrapper.Playlist().Next(true);
-                            }
-                            poco_information_f1(_logger, "Added preset: %s", std::string(droppedFilePath));
-                            // no need to toast single presets, as its obvious if a preset was loaded.
-                        }
-                    }
-                    else
-                    {
-                        // handle dropped directory
-                        _projectMWrapper.Playlist().BeginBatchEdit();
-
-                        // if droppedFolderOverride is enabled, we clear the playlist first
-                        // current edge case: if the dropped directory is invalid or contains no presets, then it still clears the playlist
-                        if (droppedFolderOverride)
-                        {
-                            _projectMWrapper.Playlist().Clear();
-                            insertIndex = 0;
-                        }
-
-                        uint32_t addedFilesCount = _projectMWrapper.Playlist().InsertPath(droppedFilePath, insertIndex, true, true);
-                        if (addedFilesCount > 0)
-                        {
-                            std::string toastMessage = "Added " + std::to_string(addedFilesCount) + " presets from " + droppedFilePath;
-                            poco_information_f1(_logger, "%s", toastMessage);
-                            if (skipToDropped || droppedFolderOverride)
-                            {
-                                // if skip to dropped is true, or if a folder was dropped and it overrode the playlist, we skip to the next preset
-                                _projectMWrapper.Playlist().Next(true);
-                            }
-                            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
-                        }
-                        else
-                        {
-                            std::string toastMessage = std::string("No presets found in: ") + droppedFilePath;
-                            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
-                            poco_information_f1(_logger, "%s", toastMessage);
-                        }
-
-                        _projectMWrapper.Playlist().EndBatchEdit();
-                    }
-                } while (false);
-
-                if (shuffle && skipToDropped)
-                {
-                    _projectMWrapper.Playlist().ShuffleEnabled(true);
-                }
-
-                SDL_free(droppedFilePath);
+                HandleDropEvent(event);
                 break;
             }
 
@@ -264,15 +180,21 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
     switch (keyCode)
     {
         case SDLK_ESCAPE:
-            _projectMGui.Toggle();
-            _sdlRenderingWindow.ShowCursor(_projectMGui.Visible());
+            if (!modifierPressed)
+            {
+                _projectMGui.Toggle();
+                _sdlRenderingWindow.ShowCursor(_projectMGui.Visible());
+            }
             break;
 
         case SDLK_a: {
-            bool aspectCorrectionEnabled = !projectm_get_aspect_correction(_projectMHandle);
-            projectm_set_aspect_correction(_projectMHandle, aspectCorrectionEnabled);
+            if (!modifierPressed)
+            {
+                bool aspectCorrectionEnabled = !projectm_get_aspect_correction(_projectMHandle);
+                projectm_set_aspect_correction(_projectMHandle, aspectCorrectionEnabled);
+            }
+            break;
         }
-        break;
 
         case SDLK_c:
             if (modifierPressed)
@@ -283,8 +205,11 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
 
 #ifdef _DEBUG
         case SDLK_d:
-            // Write next rendered frame to file
-            projectm_write_debug_image_on_next_frame(_projectMHandle, nullptr);
+            if (!modifierPressed)
+            {
+                // Write next rendered frame to file
+                projectm_write_debug_image_on_next_frame(_projectMHandle, nullptr);
+            }
             break;
 #endif
 
@@ -306,21 +231,29 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
             if (modifierPressed)
             {
                 _sdlRenderingWindow.NextDisplay();
-                break;
             }
             _projectMGui.ShowPresetChooser();
             break;
 
         case SDLK_n:
-            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::NextPreset, _keyStates._shiftPressed));
+            if (!modifierPressed)
+            {
+                Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::NextPreset, _keyStates._shiftPressed));
+            }
             break;
 
         case SDLK_p:
-            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::PreviousPreset, _keyStates._shiftPressed));
+            if (!modifierPressed)
+            {
+                Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::PreviousPreset, _keyStates._shiftPressed));
+            }
             break;
 
         case SDLK_r: {
-            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::RandomPreset, _keyStates._shiftPressed));
+            if (!modifierPressed)
+            {
+                Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::RandomPreset, _keyStates._shiftPressed));
+            }
             break;
         }
 
@@ -332,30 +265,45 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
             break;
 
         case SDLK_y:
-            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::ToggleShuffle));
+            if (!modifierPressed)
+            {
+                Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::ToggleShuffle));
+            }
             break;
 
         case SDLK_BACKSPACE:
-            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::LastPreset, _keyStates._shiftPressed));
+            if (!modifierPressed)
+            {
+                Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::LastPreset, _keyStates._shiftPressed));
+            }
             break;
 
         case SDLK_SPACE:
-            Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::TogglePresetLocked));
+            if (!modifierPressed)
+            {
+                Poco::NotificationCenter::defaultCenter().postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::TogglePresetLocked));
+            }
             break;
 
         case SDLK_UP:
-            // Increase beat sensitivity
-            _projectMWrapper.ChangeBeatSensitivity(0.01f);
+            if (!modifierPressed)
+            {
+                // Increase beat sensitivity
+                _projectMWrapper.ChangeBeatSensitivity(0.01f);
+            }
             break;
 
         case SDLK_DOWN:
-            // Decrease beat sensitivity
-            _projectMWrapper.ChangeBeatSensitivity(-0.01f);
+            if (!modifierPressed)
+            {
+                // Decrease beat sensitivity
+                _projectMWrapper.ChangeBeatSensitivity(-0.01f);
+            }
             break;
     }
 }
 
-void RenderLoop::ScrollEvent(const SDL_MouseWheelEvent& event)
+void RenderLoop::ScrollEvent(const SDL_MouseWheelEvent& event) const
 {
     // Wheel up is positive
     if (event.y > 0)
@@ -414,6 +362,8 @@ void RenderLoop::MouseDownEvent(const SDL_MouseButtonEvent& event)
             projectm_touch_destroy_all(_projectMHandle);
             poco_debug(_logger, "Cleared all custom waveforms.");
             break;
+
+        default:;
     }
 }
 
@@ -428,4 +378,106 @@ void RenderLoop::MouseUpEvent(const SDL_MouseButtonEvent& event)
 void RenderLoop::QuitNotificationHandler(const Poco::AutoPtr<Notification::Quit>& notification)
 {
     _wantsToQuit = true;
+}
+
+void RenderLoop::HandleDropEvent(const SDL_Event& event)
+{
+    if (event.drop.file == nullptr)
+    {
+        return;
+    }
+
+    std::string droppedFilePath = event.drop.file;
+    SDL_free(event.drop.file);
+
+    Poco::File droppedFile(droppedFilePath);
+    if (!droppedFile.exists() && !droppedFile.isFile() && !droppedFile.isDirectory())
+    {
+        const std::string toastMessage = std::string("Invalid file or directory dropped: ") + droppedFilePath;
+        Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
+        poco_information(_logger, toastMessage);
+        return;
+    }
+
+    // first we want to get the config settings that are relevant ehre
+    // namely skipToDropped and droppedFolderOverride
+    // we can get them from the projectMWrapper, in the _projectMConfigView available on it
+    const bool skipToDropped = _userConfig->getBool("projectM.skipToDropped", true);
+    const bool droppedFolderOverride = _userConfig->getBool("projectM.droppedFolderOverride", false);
+
+    const bool shuffle = _projectMWrapper.Playlist().ShuffleEnabled();
+    if (shuffle && skipToDropped)
+    {
+        // if shuffle is enabled, we disable it temporarily, so the dropped preset is played next
+        // if skipToDropped is false, we also keep shuffle enabled, as it doesn't matter since the current preset is unaffected
+        _projectMWrapper.Playlist().ShuffleEnabled(false);
+    }
+
+    auto insertIndex = _projectMWrapper.Playlist().CurrentIndex() + 1;
+
+    do
+    {
+        Poco::File droppedFile(droppedFilePath);
+        if (!droppedFile.isDirectory())
+        {
+            // handle dropped preset file
+            const Poco::Path droppedFileP(droppedFilePath);
+            if (droppedFileP.getExtension() != "milk" && droppedFileP.getExtension() != "prjm")
+            {
+                const std::string toastMessage = std::string("Invalid file extension: ") + droppedFilePath;
+                Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
+                poco_information(_logger, toastMessage);
+                break; // exit the block and go to the shuffle check
+            }
+
+            if (_projectMWrapper.Playlist().InsertItem(PresetPlaylist::Item(droppedFileP.toString()), insertIndex, true))
+            {
+                if (skipToDropped)
+                {
+                    _projectMWrapper.Playlist().Next(true);
+                }
+                poco_information_f1(_logger, "Added preset: %s", std::string(droppedFilePath));
+                // no need to toast single presets, as its obvious if a preset was loaded.
+            }
+        }
+        else
+        {
+            // handle dropped directory
+            _projectMWrapper.Playlist().BeginBatchEdit();
+
+            // if droppedFolderOverride is enabled, we clear the playlist first
+            // current edge case: if the dropped directory is invalid or contains no presets, then it still clears the playlist
+            if (droppedFolderOverride)
+            {
+                _projectMWrapper.Playlist().Clear();
+                insertIndex = 0;
+            }
+
+            uint32_t addedFilesCount = _projectMWrapper.Playlist().InsertPath(droppedFilePath, insertIndex, true, true);
+            if (addedFilesCount > 0)
+            {
+                std::string toastMessage = "Added " + std::to_string(addedFilesCount) + " presets from " + droppedFilePath;
+                poco_information_f1(_logger, "%s", toastMessage);
+                if (skipToDropped || droppedFolderOverride)
+                {
+                    // if skip to dropped is true, or if a folder was dropped and it overrode the playlist, we skip to the next preset
+                    _projectMWrapper.Playlist().Next(true);
+                }
+                Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
+            }
+            else
+            {
+                const std::string toastMessage = std::string("No presets found in directory: ") + droppedFilePath;
+                Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(toastMessage));
+                poco_information_f1(_logger, "%s", toastMessage);
+            }
+
+            _projectMWrapper.Playlist().EndBatchEdit();
+        }
+    } while (false);
+
+    if (shuffle && skipToDropped)
+    {
+        _projectMWrapper.Playlist().ShuffleEnabled(true);
+    }
 }
