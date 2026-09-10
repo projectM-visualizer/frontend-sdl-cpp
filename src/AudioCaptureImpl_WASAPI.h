@@ -45,11 +45,10 @@ public:
 
     /**
      * @brief Starts audio capturing with the first available device.
-     * @param projectMHandle projectM instance handle that will receive the captured data.
      * @param audioDeviceIndex The initial audio device ID to capture from. Use -1 to select the implementation's
      *                      default device.
      */
-    void StartRecording(projectm* projectMHandle, int audioDeviceIndex);
+    void StartRecording(int audioDeviceIndex);
 
     /**
      * @brief Stops audio recording.

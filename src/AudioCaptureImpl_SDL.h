@@ -5,7 +5,6 @@
 #include <Poco/Logger.h>
 
 #include <string>
-#include <vector>
 
 class projectm;
 
@@ -29,11 +28,10 @@ public:
 
     /**
      * @brief Starts audio capturing with the first available device.
-     * @param projectMHandle projectM instance handle that will receive the captured data.
      * @param audioDeviceIndex The initial audio device ID to capture from. Use -1 to select the implementation's
      *                      default device.
      */
-    void StartRecording(projectm* projectMHandle, int audioDeviceIndex);
+    void StartRecording(int audioDeviceIndex);
 
     /**
      * @brief Stops audio recording.
@@ -66,9 +64,7 @@ public:
     /**
      * @brief Asks the capture client to fill projectM's audio buffer for the next frame.
      *
-     * As of now, SDL uses async callbacks to directly fill projectM's audio buffer.
-     *
-     * @todo Store audio samples internally and push them to projectM when requested.
+     * SDL uses async callbacks to directly fill the staging audio buffer(s) as soon as new data is available.
      */
     void FillBuffer(){};
 
@@ -90,7 +86,6 @@ protected:
      */
     static void AudioInputCallback(void* userData, unsigned char* stream, int len);
 
-    projectm* _projectMHandle{nullptr}; //!< Handle if the projectM instance that will receive the audio data.
     int32_t _currentAudioDeviceIndex{-1}; //!< Currently selected audio device index.
     SDL_AudioDeviceID _currentAudioDeviceID{0}; //!< Device ID of the currently opened audio device.
     uint32_t _channels{2};
