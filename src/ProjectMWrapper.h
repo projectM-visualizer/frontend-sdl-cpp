@@ -80,6 +80,41 @@ public:
      */
     void PresetFileNameToClipboard() const;
 
+    /**
+     * Favorites the current preset by copying the preset file into the favorites folder.
+     * For now the favorites folder is a fixed test path: /Users/entropist/projectS/presets-omg
+     */
+    void FavoriteCurrentPreset();
+
+    /**
+     * Deletes (moves to system trash) the current preset after advancing to the next preset.
+     */
+    void DeleteCurrentPreset();
+
+    /**
+     * Adds a preset folder path to the end of the current playlist.
+     * @param path The folder path to add.
+     */
+    void AddPresetPath(const std::string& path);
+
+    /**
+     * Adds a single preset file to the playlist.
+     * @param path The file path to add.
+     */
+    void AddPresetFile(const std::string& path);
+
+    /**
+     * Loads and immediately displays a single preset file.
+     * @param path The file path to load and display.
+     */
+    void PlayPresetFile(const std::string& path);
+
+    /**
+     * Clears the playlist and loads a single preset folder as the primary source.
+     * @param path The folder path to load.
+     */
+    void LoadPresetPath(const std::string& path);
+
 private:
     /**
      * @brief projectM callback. Called whenever a preset is switched.

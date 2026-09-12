@@ -37,6 +37,13 @@ void MainMenu::Draw()
 
             ImGui::Separator();
 
+            if (ImGui::MenuItem("Browse & Load Presets..."))
+            {
+                _gui.ShowPresetBrowser();
+            }
+
+            ImGui::Separator();
+
             if (ImGui::MenuItem("Quit projectM", "Ctrl+q"))
             {
                 _notificationCenter.postNotification(new QuitNotification);
@@ -82,6 +89,16 @@ void MainMenu::Draw()
             if (ImGui::MenuItem("Copy Current Preset Filename", "Ctrl+c"))
             {
                 _projectMWrapper.PresetFileNameToClipboard();
+            }
+
+            if (ImGui::MenuItem("Favorite Current Preset", "f"))
+            {
+                _projectMWrapper.FavoriteCurrentPreset();
+            }
+
+            if (ImGui::MenuItem("Delete Current Preset", "d"))
+            {
+                _projectMWrapper.DeleteCurrentPreset();
             }
 
             ImGui::EndMenu();

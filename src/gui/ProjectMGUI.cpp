@@ -164,6 +164,7 @@ void ProjectMGUI::Draw()
         _settingsWindow.Draw();
         _aboutWindow.Draw();
         _helpWindow.Draw();
+        _presetBrowser.Draw(*_projectMWrapper);
     }
 
     ImGui::Render();
@@ -210,6 +211,11 @@ void ProjectMGUI::ShowAboutWindow()
 void ProjectMGUI::ShowHelpWindow()
 {
     _helpWindow.Show();
+}
+
+void ProjectMGUI::ShowPresetBrowser()
+{
+    _presetBrowser.Show();
 }
 
 float ProjectMGUI::GetScalingFactor()

@@ -282,17 +282,28 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
             }
             break;
 
-#ifdef _DEBUG
         case SDLK_d:
-            // Write next rendered frame to file
-            projectm_write_debug_image_on_next_frame(_projectMHandle, nullptr);
-            break;
+            if (modifierPressed)
+            {
+#ifdef _DEBUG
+                // Write next rendered frame to file
+                projectm_write_debug_image_on_next_frame(_projectMHandle, nullptr);
 #endif
+            }
+            else
+            {
+                _projectMWrapper.DeleteCurrentPreset();
+            }
+            break;
 
         case SDLK_f:
             if (modifierPressed)
             {
                 _sdlRenderingWindow.ToggleFullscreen();
+            }
+            else
+            {
+                _projectMWrapper.FavoriteCurrentPreset();
             }
             break;
 

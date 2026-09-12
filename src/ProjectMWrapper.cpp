@@ -12,6 +12,10 @@
 #include <SDL2/SDL_opengl.h>
 
 #include <cmath>
+#include <filesystem>
+#include <chrono>
+#include <sstream>
+#include <fstream>
 
 const char* ProjectMWrapper::name() const
 {
@@ -211,6 +215,275 @@ void ProjectMWrapper::PresetFileNameToClipboard() const
     auto presetName = projectm_playlist_item(_playlist, projectm_playlist_get_position(_playlist));
     SDL_SetClipboardText(presetName);
     projectm_playlist_free_string(presetName);
+}
+
+void ProjectMWrapper::FavoriteCurrentPreset()
+{
+    if (!_playlist)
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("No playlist available to favorite preset."));
+        return;
+    }
+
+    auto pos = projectm_playlist_get_position(_playlist);
+    auto presetNameC = projectm_playlist_item(_playlist, pos);
+    if (!presetNameC)
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("No preset selected."));
+        return;
+    }
+
+    std::string srcPath(presetNameC);
+    projectm_playlist_free_string(presetNameC);
+
+    try
+    {
+        std::filesystem::path src(srcPath);
+        if (!std::filesystem::exists(src))
+        {
+            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Preset file not found."));
+            std::ofstream ofs("/Users/entropist/projectM-favorites.log", std::ios::app);
+            ofs << "[" << std::time(nullptr) << "] Preset file not found: " << srcPath << "\n";
+            return;
+        }
+
+        // Fixed test favorites directory from user request
+        std::filesystem::path favDir("/Users/entropist/projectS/presets-omg");
+        std::error_code ec;
+        std::filesystem::create_directories(favDir, ec);
+        if (ec)
+        {
+            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Failed to create favorites directory."));
+            std::ofstream ofs("/Users/entropist/projectM-favorites.log", std::ios::app);
+            ofs << "[" << std::time(nullptr) << "] Failed to create favorites dir: " << favDir.string() << " ec=" << ec.message() << "\n";
+            return;
+        }
+
+        std::filesystem::path dest = favDir / src.filename();
+        if (std::filesystem::exists(dest))
+        {
+            // append timestamp to avoid overwrite
+            auto now = std::chrono::system_clock::now();
+            auto t = std::chrono::system_clock::to_time_t(now);
+            std::tm tm;
+#ifdef _WIN32
+            localtime_s(&tm, &t);
+#else
+            localtime_r(&t, &tm);
+#endif
+            std::ostringstream ss;
+            ss << std::put_time(&tm, "%Y%m%d%H%M%S");
+            std::string stem = dest.stem().string() + "-" + ss.str();
+            dest = dest.parent_path() / (stem + dest.extension().string());
+        }
+
+        std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing, ec);
+        if (ec)
+        {
+            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Failed to favorite preset."));
+            std::ofstream ofs("/Users/entropist/projectM-favorites.log", std::ios::app);
+            ofs << "[" << std::time(nullptr) << "] Failed to copy " << srcPath << " -> " << dest.string() << " ec=" << ec.message() << "\n";
+            return;
+        }
+
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(Poco::format("Favorited preset: %s", dest.string())));
+        std::ofstream ofs("/Users/entropist/projectM-favorites.log", std::ios::app);
+        ofs << "[" << std::time(nullptr) << "] Favorited: " << srcPath << " -> " << dest.string() << "\n";
+    }
+    catch (const std::exception& ex)
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(Poco::format("Error favoriting preset: %s", ex.what())));
+        std::ofstream ofs("/Users/entropist/projectM-favorites.log", std::ios::app);
+        ofs << "[" << std::time(nullptr) << "] Exception favoriting " << srcPath << " : " << ex.what() << "\n";
+    }
+}
+
+void ProjectMWrapper::DeleteCurrentPreset()
+{
+    if (!_playlist)
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("No playlist available to delete preset."));
+        return;
+    }
+
+    auto pos = projectm_playlist_get_position(_playlist);
+    auto presetNameC = projectm_playlist_item(_playlist, pos);
+    if (!presetNameC)
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("No preset selected."));
+        return;
+    }
+
+    std::string srcPath(presetNameC);
+    projectm_playlist_free_string(presetNameC);
+
+    try
+    {
+        std::filesystem::path src(srcPath);
+        if (!std::filesystem::exists(src))
+        {
+            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Preset file not found."));
+            std::ofstream ofs("/Users/entropist/projectM-favorites.log", std::ios::app);
+            ofs << "[" << std::time(nullptr) << "] Preset file not found for delete: " << srcPath << "\n";
+            return;
+        }
+
+        // Move to next preset first (as requested)
+        projectm_playlist_play_next(_playlist, true);
+
+        // On macOS the user's trash is located at $HOME/.Trash. Use that to emulate 'move to Trash'.
+        const char* home = std::getenv("HOME");
+        std::filesystem::path trashDir;
+        if (home && std::strlen(home) > 0)
+        {
+            trashDir = std::filesystem::path(home) / ".Trash";
+        }
+        else
+        {
+            // fallback to a local .trash folder in the projectS dir
+            trashDir = std::filesystem::path("/Users/entropist/projectS/.trash");
+        }
+
+        std::error_code ec;
+        std::filesystem::create_directories(trashDir, ec);
+        if (ec)
+        {
+            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Failed to create trash folder."));
+            std::ofstream ofs("/Users/entropist/projectM-favorites.log", std::ios::app);
+            ofs << "[" << std::time(nullptr) << "] Failed to create trash dir: " << trashDir.string() << " ec=" << ec.message() << "\n";
+            return;
+        }
+
+        std::filesystem::path dest = trashDir / src.filename();
+        if (std::filesystem::exists(dest))
+        {
+            // append timestamp to avoid overwrite
+            auto now = std::chrono::system_clock::now();
+            auto t = std::chrono::system_clock::to_time_t(now);
+            std::tm tm;
+#ifdef _WIN32
+            localtime_s(&tm, &t);
+#else
+            localtime_r(&t, &tm);
+#endif
+            std::ostringstream ss;
+            ss << std::put_time(&tm, "%Y%m%d%H%M%S");
+            std::string stem = dest.stem().string() + "-" + ss.str();
+            dest = dest.parent_path() / (stem + dest.extension().string());
+        }
+
+        std::filesystem::rename(src, dest, ec);
+        if (ec)
+        {
+            Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Failed to move preset to trash."));
+            std::ofstream ofs("/Users/entropist/projectM-favorites.log", std::ios::app);
+            ofs << "[" << std::time(nullptr) << "] Failed to move " << srcPath << " -> " << dest.string() << " ec=" << ec.message() << "\n";
+            return;
+        }
+
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(Poco::format("Deleted preset: %s", dest.string())));
+        std::ofstream ofs("/Users/entropist/projectM-favorites.log", std::ios::app);
+        ofs << "[" << std::time(nullptr) << "] Deleted: " << srcPath << " -> " << dest.string() << "\n";
+    }
+    catch (const std::exception& ex)
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(Poco::format("Error deleting preset: %s", ex.what())));
+        std::ofstream ofs("/Users/entropist/projectM-favorites.log", std::ios::app);
+        ofs << "[" << std::time(nullptr) << "] Exception deleting " << srcPath << " : " << ex.what() << "\n";
+    }
+}
+
+void ProjectMWrapper::AddPresetPath(const std::string& path)
+{
+    if (!_playlist)
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Playlist not initialized."));
+        return;
+    }
+
+    Poco::File file(path);
+    if (!file.exists() || !file.isDirectory())
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Invalid preset folder path."));
+        return;
+    }
+
+    projectm_playlist_add_path(_playlist, path.c_str(), true, false);
+    projectm_playlist_sort(_playlist, 0, projectm_playlist_size(_playlist), SORT_PREDICATE_FILENAME_ONLY, SORT_ORDER_ASCENDING);
+}
+
+void ProjectMWrapper::AddPresetFile(const std::string& path)
+{
+    if (!_playlist)
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Playlist not initialized."));
+        return;
+    }
+
+    Poco::File file(path);
+    if (!file.exists() || file.isDirectory())
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Invalid preset file path."));
+        return;
+    }
+
+    projectm_playlist_add_preset(_playlist, path.c_str(), false);
+    projectm_playlist_sort(_playlist, 0, projectm_playlist_size(_playlist), SORT_PREDICATE_FILENAME_ONLY, SORT_ORDER_ASCENDING);
+}
+
+void ProjectMWrapper::PlayPresetFile(const std::string& path)
+{
+    if (!_playlist)
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Playlist not initialized."));
+        return;
+    }
+
+    Poco::File file(path);
+    if (!file.exists() || file.isDirectory())
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Invalid preset file path."));
+        return;
+    }
+
+    // Add the preset to the end of the playlist
+    uint32_t currentSize = projectm_playlist_size(_playlist);
+    projectm_playlist_add_preset(_playlist, path.c_str(), false);
+
+    // Immediately play the newly added preset
+    if (projectm_playlist_size(_playlist) > currentSize)
+    {
+        projectm_playlist_set_position(_playlist, currentSize, true);
+    }
+}
+
+void ProjectMWrapper::LoadPresetPath(const std::string& path)
+{
+    if (!_playlist)
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Playlist not initialized."));
+        return;
+    }
+
+    Poco::File file(path);
+    if (!file.exists() || !file.isDirectory())
+    {
+        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification("Invalid preset folder path."));
+        return;
+    }
+
+    // Clear the current playlist
+    projectm_playlist_clear(_playlist);
+
+    // Add the new folder
+    projectm_playlist_add_path(_playlist, path.c_str(), true, false);
+    projectm_playlist_sort(_playlist, 0, projectm_playlist_size(_playlist), SORT_PREDICATE_FILENAME_ONLY, SORT_ORDER_ASCENDING);
+
+    // Display the first preset
+    if (projectm_playlist_size(_playlist) > 0)
+    {
+        projectm_playlist_set_position(_playlist, 0, true);
+    }
 }
 
 void ProjectMWrapper::PresetSwitchedEvent(bool isHardCut, unsigned int index, void* context)
