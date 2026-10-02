@@ -4,7 +4,39 @@ name: Build Release Package for macOS
 
 on:
   workflow_dispatch:
+    inputs:
+      projectMSDLref:
+        description: "projectMSDL Git reference (branch, tag or commit hash)"
+        required: true
+        default: "master"
+        type: string
+      projectMref:
+        description: "libprojectM Git reference (branch, tag or commit hash)"
+        required: true
+        default: "master"
+        type: string
+      pocoref:
+        description: "POCO Git reference (branch, tag or commit hash)"
+        required: true
+        default: "poco-1.14.1"
+        type: string
   workflow_call:
+    inputs:
+      projectMSDLref:
+        description: "projectMSDL Git reference (branch, tag or commit hash)"
+        required: false
+        default: "master"
+        type: string
+      projectMref:
+        description: "libprojectM Git reference (branch, tag or commit hash)"
+        required: false
+        default: "master"
+        type: string
+      pocoref:
+        description: "POCO Git reference (branch, tag or commit hash)"
+        required: false
+        default: "poco-1.14.1"
+        type: string
     secrets:
       MACOS_CERTIFICATE_APPLICATION:
         required: true
@@ -29,7 +61,7 @@ jobs:
       # We need to build third-party libraries (POCO, SDL2 and projectM) ourselves, as neither Homebrew
       # nor vcpkg support building universal binaries.
       - name: Checkout libSDL2 Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: libsdl-org/SDL
           path: libsdl2
@@ -48,11 +80,11 @@ jobs:
           cmake --install "${{ github.workspace }}/cmake-build-libsdl2"
 
       - name: Checkout Poco Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: pocoproject/poco
           path: poco
-          ref: 'poco-1.14.1'
+          ref: ${{ inputs.pocoref }}
           submodules: recursive
 
       - name: Build Poco
@@ -82,10 +114,11 @@ jobs:
           cmake --install "${{ github.workspace }}/cmake-build-poco"
 
       - name: Checkout libprojectM Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: projectM-visualizer/projectm
           path: projectm
+          ref: ${{ inputs.projectMref }}
           submodules: recursive
 
       - name: Build/Install libprojectM
@@ -100,19 +133,20 @@ jobs:
           cmake --install "${{ github.workspace }}/cmake-build-libprojectm"
 
       - name: Checkout projectMSDL Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: frontend-sdl2
+          ref: ${{ inputs.projectMSDLref }}
           submodules: recursive
 
       - name: Checkout Cream of the Crop preset pack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: projectM-visualizer/presets-cream-of-the-crop
           path: presets-cream-of-the-crop
 
       - name: Checkout Milkdrop Texture Pack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: projectM-visualizer/presets-milkdrop-texture-pack
           path: presets-milkdrop-texture-pack
@@ -203,7 +237,7 @@ jobs:
           xcrun stapler staple "${{ github.workspace }}/install/projectM.app"
 
       - name: Upload .app Bundle Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: projectMSDL-macOS-Universal-APP
           path: install/
@@ -253,7 +287,7 @@ jobs:
           xcrun stapler staple "$PKG_FILE"
 
       - name: Upload PKG Installer Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: projectMSDL-macOS-Universal-PKG
           path: projectM-*.pkg
@@ -297,7 +331,7 @@ jobs:
           xcrun stapler staple "$DMG_FILE"
 
       - name: Upload DMG Installer Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: projectMSDL-macOS-Universal-DMG
           path: projectM-*.dmg

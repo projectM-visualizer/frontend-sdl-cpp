@@ -6,7 +6,39 @@ name: Build Release Package for Linux
 
 on:
   workflow_dispatch:
+    inputs:
+      projectMSDLref:
+        description: "projectMSDL Git reference (branch, tag or commit hash)"
+        required: true
+        default: "master"
+        type: string
+      projectMref:
+        description: "libprojectM Git reference (branch, tag or commit hash)"
+        required: true
+        default: "master"
+        type: string
+      pocoref:
+        description: "POCO Git reference (branch, tag or commit hash)"
+        required: true
+        default: "poco-1.14.1"
+        type: string
   workflow_call:
+    inputs:
+      projectMSDLref:
+        description: "projectMSDL Git reference (branch, tag or commit hash)"
+        required: false
+        default: "master"
+        type: string
+      projectMref:
+        description: "libprojectM Git reference (branch, tag or commit hash)"
+        required: false
+        default: "master"
+        type: string
+      pocoref:
+        description: "POCO Git reference (branch, tag or commit hash)"
+        required: false
+        default: "poco-1.14.1"
+        type: string
 
 jobs:
   build-deb:
@@ -24,11 +56,11 @@ jobs:
       # and other distros may ship different versions as well. POCO as a C++ library has no stable ABI, so each minor
       # release increments the SO version by one.
       - name: Checkout Poco Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: pocoproject/poco
           path: poco
-          ref: 'poco-1.14.1'
+          ref: ${{ inputs.pocoref }}
           submodules: recursive
 
       - name: Build Poco
@@ -53,10 +85,11 @@ jobs:
           cmake --install "${{ github.workspace }}/cmake-build-poco"
 
       - name: Checkout libprojectM Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: projectM-visualizer/projectm
           path: projectm
+          ref: ${{ inputs.projectMref }}
           submodules: recursive
 
       - name: Build/Install libprojectM
@@ -70,19 +103,20 @@ jobs:
           cmake --install "${{ github.workspace }}/cmake-build-libprojectm"
 
       - name: Checkout frontend-sdl2 Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: frontend-sdl2
+          ref: ${{ inputs.projectMSDLref }}
           submodules: recursive
 
       - name: Checkout Cream of the Crop preset pack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: projectM-visualizer/presets-cream-of-the-crop
           path: presets-cream-of-the-crop
 
       - name: Checkout Milkdrop Texture Pack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: projectM-visualizer/presets-milkdrop-texture-pack
           path: presets-milkdrop-texture-pack
@@ -106,7 +140,7 @@ jobs:
           cpack -G DEB
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: projectMSDL-Linux-DEB-x86_64
           path: cmake-build-frontend-sdl2/*.deb
@@ -126,11 +160,11 @@ jobs:
       # and other distros may ship different versions as well. POCO as a C++ library has no stable ABI, so each minor
       # release increments the SO version by one.
       - name: Checkout Poco Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: pocoproject/poco
           path: poco
-          ref: 'poco-1.14.1'
+          ref: ${{ inputs.pocoref }}
           submodules: recursive
 
       - name: Build Poco
@@ -155,10 +189,11 @@ jobs:
           cmake --install "${{ github.workspace }}/cmake-build-poco"
 
       - name: Checkout libprojectM Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: projectM-visualizer/projectm
           path: projectm
+          ref: ${{ inputs.projectMref }}
           submodules: recursive
 
       - name: Build/Install libprojectM
@@ -172,19 +207,20 @@ jobs:
           cmake --install "${{ github.workspace }}/cmake-build-libprojectm"
 
       - name: Checkout frontend-sdl2 Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: frontend-sdl2
+          ref: ${{ inputs.projectMSDLref }}
           submodules: recursive
 
       - name: Checkout Cream of the Crop preset pack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: projectM-visualizer/presets-cream-of-the-crop
           path: presets-cream-of-the-crop
 
       - name: Checkout Milkdrop Texture Pack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: projectM-visualizer/presets-milkdrop-texture-pack
           path: presets-milkdrop-texture-pack
@@ -209,7 +245,7 @@ jobs:
           cpack -G TGZ
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: projectMSDL-Linux-Portable-x86_64
           path: cmake-build-frontend-sdl2/*.tar.gz

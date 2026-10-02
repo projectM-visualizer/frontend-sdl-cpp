@@ -42,6 +42,13 @@ target_include_directories(ImGui
         ${SDL2_INCLUDE_DIRS}
         )
 
+if (ENABLE_GLES)
+    target_compile_definitions(ImGui
+            PUBLIC
+            IMGUI_IMPL_OPENGL_ES3
+            )
+endif ()
+
 # Build font embedding tool
 add_executable(ImGuiBinaryToCompressedC EXCLUDE_FROM_ALL
         vendor/imgui/misc/fonts/binary_to_compressed_c.cpp

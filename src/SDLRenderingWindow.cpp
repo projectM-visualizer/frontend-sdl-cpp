@@ -242,9 +242,9 @@ void SDLRenderingWindow::CreateSDLWindow()
     }
 
 #if USE_GLES
-    // use GLES 2.0
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    // use GLES 3.2
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 #else
     // projectM Requires at least Core Profile 3.30 for samplers etc.
@@ -253,6 +253,8 @@ void SDLRenderingWindow::CreateSDLWindow()
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
+    SDL_SetHint(SDL_HINT_APP_NAME, "projectM");
+  
 #ifdef __linux__
     if (wid) {
         SDL_SetHint(SDL_HINT_VIDEO_FOREIGN_WINDOW_OPENGL, "1");

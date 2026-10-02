@@ -15,6 +15,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 option(ENABLE_FLAT_PACKAGE "Creates a \"flat\" install layout with the executable, configuration file(s) and preset/texture dirs directly in the install prefix." OFF)
 option(ENABLE_INSTALL_BDEPS "Installs all shared libraries projectMSDL requires to run. On some platforms, CMake 3.31 or higher is required for this to work!" OFF)
+option(ENABLE_GLES "Build the application to use OpenGL ES instead of Core GL. May not work on all platforms and requires CMake 3.27 or higher." OFF)
 
 set(PROJECTMSDL_PROPERTIES_FILENAME "projectMSDL.properties")
 
@@ -97,6 +98,14 @@ endif()
 
 find_package(projectM4 REQUIRED COMPONENTS Playlist)
 find_package(SDL2 REQUIRED)
+if (NOT ENABLE_GLES)
+    find_package(OpenGL REQUIRED)
+else ()
+    if (CMAKE_VERSION VERSION_LESS 3.27)
+        message(FATAL_ERROR "CMake 3.27 or higher is required to build with OpenGL ES 3!")
+    endif ()
+    find_package(OpenGL REQUIRED COMPONENTS GLES3)
+endif()
 find_package(Poco REQUIRED COMPONENTS JSON XML Util Foundation)
 
 if(Poco_VERSION VERSION_GREATER_EQUAL 1.14.0)
