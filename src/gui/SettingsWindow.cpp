@@ -220,7 +220,7 @@ void SettingsWindow::DrawWindowSettingsTab()
             ImGui::TableNextRow();
             LabelWithTooltip("  Exclusive Fullscreen Mode",
                              "Use exclusive mode if fullscreen, e.g. not as a borderless window.\nThis can improve performance, but may switch the desktop resolution!");
-            BooleanSetting("window.fullscreen.exclusive", false);
+            BooleanSetting("window.fullscreen.exclusiveMode", false);
 
             ImGui::TableNextRow();
             LabelWithTooltip("  Exclusive Mode Resolution",
