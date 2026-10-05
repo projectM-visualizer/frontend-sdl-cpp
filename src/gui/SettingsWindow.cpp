@@ -6,7 +6,7 @@
 
 #include "ProjectMGUI.h"
 
-#include "notifications/DisplayToastNotification.h"
+#include "notifications/DisplayToast.h"
 
 #include <imgui.h>
 
@@ -331,18 +331,18 @@ void SettingsWindow::SaveButton()
             {
                 _userConfiguration->save(configFile);
                 Poco::NotificationCenter::defaultCenter().postNotification(
-                    new DisplayToastNotification("Settings saved!"));
+                    new Notification::DisplayToast("Settings saved!"));
             }
             else
             {
                 Poco::NotificationCenter::defaultCenter().postNotification(
-                    new DisplayToastNotification("Error saving settings"));
+                    new Notification::DisplayToast("Error saving settings"));
             }
         }
         catch (...)
         {
             Poco::NotificationCenter::defaultCenter().postNotification(
-                new DisplayToastNotification("Error saving settings"));
+                new Notification::DisplayToast("Error saving settings"));
         }
 
         _changed = false;

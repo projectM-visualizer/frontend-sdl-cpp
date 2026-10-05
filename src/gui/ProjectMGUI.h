@@ -3,10 +3,11 @@
 #include "AboutWindow.h"
 #include "HelpWindow.h"
 #include "MainMenu.h"
+#include "PresetChooser.h"
 #include "SettingsWindow.h"
 #include "ToastMessage.h"
 
-#include "notifications/DisplayToastNotification.h"
+#include "notifications/DisplayToast.h"
 
 #include <SDL2/SDL.h>
 
@@ -104,16 +105,26 @@ public:
      */
     void ShowHelpWindow();
 
+    /**
+     * @brief Displays the preset chooser window.
+     */
+    void ShowPresetChooser();
+
+    /**
+     * @brief Closes the preset chooser window.
+     */
+    void ClosePresetChooser();
+
 private:
     float GetScalingFactor();
 
     static float GetClampedUserScalingFactor();
 
-    void DisplayToastNotificationHandler(const Poco::AutoPtr<DisplayToastNotification>& notification);
+    void DisplayToastNotificationHandler(const Poco::AutoPtr<Notification::DisplayToast>& notification);
 
     ProjectMWrapper* _projectMWrapper{nullptr};
 
-    Poco::NObserver<ProjectMGUI, DisplayToastNotification> _displayToastNotificationObserver{*this, &ProjectMGUI::DisplayToastNotificationHandler};
+    Poco::NObserver<ProjectMGUI, Notification::DisplayToast> _displayToastNotificationObserver{*this, &ProjectMGUI::DisplayToastNotificationHandler};
 
     std::string _uiIniFileName; //!< Path and filename of the UI configuration (positions etc.)
 
@@ -131,6 +142,7 @@ private:
     SettingsWindow _settingsWindow{*this}; //!< The settings window.
     AboutWindow _aboutWindow{*this}; //!< The about window.
     HelpWindow _helpWindow; //!< Help window with shortcuts and tips.
+    std::unique_ptr<PresetChooser> _presetChooser; //!< Preset quick search/filter popup.
 
     std::unique_ptr<ToastMessage> _toast; //!< Current toast to be displayed.
 

@@ -4,7 +4,7 @@
 
 #include "ProjectMWrapper.h"
 
-#include "notifications/DisplayToastNotification.h"
+#include "notifications/DisplayToast.h"
 
 #include <Poco/NotificationCenter.h>
 
@@ -47,7 +47,7 @@ void AudioCapture::NextAudioDevice()
     if (_impl)
     {
         _impl->NextAudioDevice();
-        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(_impl->AudioDeviceName()));
+        Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(_impl->AudioDeviceName()));
     }
 }
 
@@ -56,7 +56,7 @@ void AudioCapture::AudioDeviceIndex(int index)
     if (_impl)
     {
         _impl->AudioDeviceIndex(index);
-        Poco::NotificationCenter::defaultCenter().postNotification(new DisplayToastNotification(_impl->AudioDeviceName()));
+        Poco::NotificationCenter::defaultCenter().postNotification(new Notification::DisplayToast(_impl->AudioDeviceName()));
     }
 }
 

@@ -384,7 +384,7 @@ SDL_GLContext SDLRenderingWindow::GetGlContext() const
     return _glContext;
 }
 
-void SDLRenderingWindow::UpdateWindowTitleNotificationHandler(POCO_UNUSED const Poco::AutoPtr<UpdateWindowTitleNotification>& notification)
+void SDLRenderingWindow::UpdateWindowTitleNotificationHandler(POCO_UNUSED const Poco::AutoPtr<Notification::UpdateWindowTitle>& notification)
 {
     UpdateWindowTitle();
 }
@@ -398,14 +398,14 @@ void SDLRenderingWindow::UpdateWindowTitle()
         auto& app = Poco::Util::Application::instance();
         auto& projectMWrapper = app.getSubsystem<ProjectMWrapper>();
 
-        auto presetName = projectm_playlist_item(projectMWrapper.Playlist(), projectm_playlist_get_position(projectMWrapper.Playlist()));
-
-        if (presetName)
+        if (!projectMWrapper.Playlist().Empty())
         {
-            Poco::Path presetFile(presetName);
-            projectm_playlist_free_string(presetName);
+            const auto& currentItem = projectMWrapper.Playlist().CurrentItem();
 
-            newTitle += " ➫ " + presetFile.getBaseName();
+            if (!currentItem.PresetName().empty())
+            {
+                newTitle += " ➫ " + currentItem.PresetName();
+            }
         }
 
         if (projectm_get_preset_locked(projectMWrapper.ProjectM()))

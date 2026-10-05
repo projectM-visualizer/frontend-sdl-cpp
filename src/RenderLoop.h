@@ -4,11 +4,10 @@
 #include "ProjectMWrapper.h"
 #include "SDLRenderingWindow.h"
 
-#include "notifications/QuitNotification.h"
+#include "notifications/Quit.h"
 
 #include <Poco/Logger.h>
 #include <Poco/NObserver.h>
-#include <Poco/Notification.h>
 
 class ProjectMGUI;
 
@@ -52,7 +51,7 @@ protected:
      * @brief Handles SDL mouse wheel events.
      * @param event The mouse wheel event
      */
-    void ScrollEvent(const SDL_MouseWheelEvent& event);
+    void ScrollEvent(const SDL_MouseWheelEvent& event) const;
 
     /**
      * @brief Handles SDL mouse button down events.
@@ -70,18 +69,23 @@ protected:
      * @brief Handler for quit notifications.
      * @param notification The received notification.
      */
-    void QuitNotificationHandler(const Poco::AutoPtr<QuitNotification>& notification);
+    void QuitNotificationHandler(const Poco::AutoPtr<Notification::Quit>& notification);
+
+    /**
+     * Handles a file/dir drop event into the window.
+     * @param event The drop event from SDL
+     */
+    void HandleDropEvent(const SDL_Event& event);
 
     AudioCapture& _audioCapture;
     ProjectMWrapper& _projectMWrapper;
     SDLRenderingWindow& _sdlRenderingWindow;
 
     projectm_handle _projectMHandle{nullptr};
-    projectm_playlist_handle _playlistHandle{nullptr};
 
     ProjectMGUI& _projectMGui;
 
-    Poco::NObserver<RenderLoop, QuitNotification> _quitNotificationObserver{*this, &RenderLoop::QuitNotificationHandler}; //!< The observer for quit notifications.
+    Poco::NObserver<RenderLoop, Notification::Quit> _quitNotificationObserver{*this, &RenderLoop::QuitNotificationHandler}; //!< The observer for quit notifications.
 
     bool _wantsToQuit{false};
 

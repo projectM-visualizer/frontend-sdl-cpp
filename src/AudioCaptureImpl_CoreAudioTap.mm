@@ -1,6 +1,6 @@
 #include "AudioCaptureImpl_CoreAudioTap.h"
 
-#include "notifications/AudioDataAvailableNotification.h"
+#include "notifications/AudioDataAvailable.h"
 
 #include <Poco/NotificationCenter.h>
 
@@ -213,7 +213,7 @@ bool CoreAudioTapCapture::StartTap()
                   unsigned int sampleCount = buffer.mDataByteSize / sizeof(float);
 
                   Poco::NotificationCenter::defaultCenter().postNotification(
-                      new AudioDataAvailableNotification(bufferChannels, samples, sampleCount));
+                      new Notification::AudioDataAvailable(bufferChannels, samples, sampleCount));
                 });
 
             if (status != noErr || _ioProcID == nullptr)

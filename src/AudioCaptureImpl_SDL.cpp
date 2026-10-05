@@ -1,6 +1,6 @@
 #include "AudioCaptureImpl_SDL.h"
 
-#include "notifications/AudioDataAvailableNotification.h"
+#include "notifications/AudioDataAvailable.h"
 
 #include <Poco/NotificationCenter.h>
 #include <Poco/Util/Application.h>
@@ -163,7 +163,7 @@ void AudioCaptureImpl::AudioInputCallback(void* userData, unsigned char* stream,
     unsigned int samples = len / sizeof(float);
 
     Poco::NotificationCenter::defaultCenter().postNotification(
-        new AudioDataAvailableNotification(instance->_channels,
+        new Notification::AudioDataAvailable(instance->_channels,
                                            reinterpret_cast<float*>(stream),
                                            samples));
 }

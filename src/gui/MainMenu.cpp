@@ -7,9 +7,9 @@
 #include "gui/ProjectMGUI.h"
 #include "gui/SystemBrowser.h"
 
-#include "notifications/PlaybackControlNotification.h"
-#include "notifications/QuitNotification.h"
-#include "notifications/UpdateWindowTitleNotification.h"
+#include "notifications/PlaybackControl.h"
+#include "notifications/Quit.h"
+#include "notifications/UpdateWindowTitle.h"
 
 #include "imgui.h"
 
@@ -39,7 +39,7 @@ void MainMenu::Draw()
 
             if (ImGui::MenuItem("Quit projectM", "Ctrl+q"))
             {
-                _notificationCenter.postNotification(new QuitNotification);
+                _notificationCenter.postNotification(new Notification::Quit);
             }
 
             ImGui::EndMenu();
@@ -51,30 +51,30 @@ void MainMenu::Draw()
 
             if (ImGui::MenuItem("Play Next Preset", "n"))
             {
-                _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::LastPreset));
+                _notificationCenter.postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::LastPreset));
             }
             if (ImGui::MenuItem("Play Previous Preset", "p"))
             {
-                _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::PreviousPreset));
+                _notificationCenter.postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::PreviousPreset));
             }
             if (ImGui::MenuItem("Go Back One Preset", "Backspace"))
             {
-                _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::LastPreset));
+                _notificationCenter.postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::LastPreset));
             }
             if (ImGui::MenuItem("Random Preset", "r"))
             {
-                _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::RandomPreset));
+                _notificationCenter.postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::RandomPreset));
             }
 
             ImGui::Separator();
 
             if (ImGui::MenuItem("Lock Preset", "Spacebar", app.config().getBool("projectM.presetLocked", false)))
             {
-                _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::TogglePresetLocked));
+                _notificationCenter.postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::TogglePresetLocked));
             }
             if (ImGui::MenuItem("Enable Shuffle", "y", app.config().getBool("projectM.shuffleEnabled", true)))
             {
-                _notificationCenter.postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::ToggleShuffle));
+                _notificationCenter.postNotification(new Notification::PlaybackControl(Notification::PlaybackControl::Action::ToggleShuffle));
             }
 
             ImGui::Separator();
@@ -115,7 +115,7 @@ void MainMenu::Draw()
             if (ImGui::MenuItem("Display Preset Name in Window Title", "", app.config().getBool("window.displayPresetNameInTitle", true)))
             {
                 app.UserConfiguration()->setBool("window.displayPresetNameInTitle", !app.config().getBool("window.displayPresetNameInTitle", true));
-                _notificationCenter.postNotification(new UpdateWindowTitleNotification);
+                _notificationCenter.postNotification(new Notification::UpdateWindowTitle);
             }
 
             ImGui::Separator();

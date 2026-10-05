@@ -1,14 +1,16 @@
 add_library(ProjectMSDL-Notifications STATIC
-        AudioDataAvailableNotification.cpp
-        AudioDataAvailableNotification.h
-        DisplayToastNotification.cpp
-        DisplayToastNotification.h
-        PlaybackControlNotification.cpp
-        PlaybackControlNotification.h
-        QuitNotification.cpp
-        QuitNotification.h
-        UpdateWindowTitleNotification.cpp
-        UpdateWindowTitleNotification.h
+        AudioDataAvailable.cpp
+        AudioDataAvailable.h
+        DisplayToast.cpp
+        DisplayToast.h
+        PlaybackControl.cpp
+        PlaybackControl.h
+        PlaylistChanged.cpp
+        PlaylistChanged.h
+        Quit.cpp
+        Quit.h
+        UpdateWindowTitle.cpp
+        UpdateWindowTitle.h
         )
 
 target_include_directories(ProjectMSDL-Notifications

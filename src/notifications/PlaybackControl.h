@@ -2,10 +2,12 @@
 
 #include <Poco/Notification.h>
 
+namespace Notification {
+
 /**
  * @brief Navigates the playlist and toggles playback modes.
  */
-class PlaybackControlNotification : public Poco::Notification
+class PlaybackControl : public Poco::Notification
 {
 public:
     enum class Action
@@ -18,7 +20,7 @@ public:
         TogglePresetLocked
     };
 
-    explicit PlaybackControlNotification(Action action, bool smoothTransition = false);
+    explicit PlaybackControl(Action action, bool smoothTransition = false);
 
     std::string name() const override;
 
@@ -30,3 +32,5 @@ private:
     Action _action;
     bool _smoothTransition{};
 };
+
+} // namespace Notification
