@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Poco/File.h>
-#include <Poco/Path.h>
 #include <Poco/Logger.h>
+#include <Poco/Path.h>
 
 #include <set>
 
@@ -14,10 +14,12 @@
 class FileChooser
 {
 public:
-    enum class Mode {
+    enum class Mode
+    {
         File,
         Directory,
-        Both
+        Both,
+        SaveFile
     };
 
     FileChooser() = delete;
@@ -47,6 +49,19 @@ public:
      * @param path Sets the new current directory for the chooser dialog.
      */
     void CurrentDirectory(const std::string& path);
+
+    /**
+     * @brief Returns the filename to save into.
+     * Won't be empty after the user clicked on "Save".
+     * @return The filename to save the file into.
+     */
+    std::string SaveFilename() const;
+
+    /**
+     * Sets the filename that should be displayed in the filename box when the popup opens.
+     * @param filename The filename to pre-fill the filename box with.
+     */
+    void SaveFilename(const std::string& filename);
 
     /**
      * @brief Sets the current file chooser context of the caller.
@@ -146,18 +161,20 @@ protected:
     void UpdateListSelection(int index, bool isSelected);
 
     std::string _title; //!< The window title.
+    std::string _titleAndId; //!< The window title including the ImGui ID.
     std::string _context; //!< Context data for the caller.
     std::vector<std::string> _extensions; //!< File extensions to filter.
     Mode _mode{Mode::File}; //!< Chooser mode, either file or directory.
-    bool _visible{ false }; //!< File chooser window visible.
-    bool _showHidden{ false }; //!< If true, hidden files/dirs are shown.
-    bool _multiSelect{ false }; //!< If true, selecting multiple files/directories is allowed.
-    Poco::Path _currentDir{ Poco::Path::current() }; //!< Current working dir.
+    bool _visible{false}; //!< File chooser window visible.
+    bool _showHidden{false}; //!< If true, hidden files/dirs are shown.
+    bool _multiSelect{false}; //!< If true, selecting multiple files/directories is allowed.
+    Poco::Path _currentDir{Poco::Path::current()}; //!< Current working dir.
     std::vector<Poco::File> _currentFileList; //!< File list of current directory
     std::vector<Poco::File> _selectedFiles; //!< Currently selected file(s).
-    int _selectedFileIndex{ 0 }; //!< Last selected item in the file list.
+    std::string _saveFilename; //!< Filename to save to.
+    int _selectedFileIndex{0}; //!< Last selected item in the file list.
     std::set<int> _selectedFileIndices; //!< Set of selected file indices in the list
 
 
-    Poco::Logger& _logger{ Poco::Logger::get("GuiFileChooserWindow") };
+    Poco::Logger& _logger{Poco::Logger::get("GuiFileChooserWindow")};
 };

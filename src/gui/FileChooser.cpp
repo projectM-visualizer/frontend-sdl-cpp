@@ -1,5 +1,7 @@
 #include "FileChooser.h"
 
+#include "IconsFontAwesome7.h"
+
 #include "imgui.h"
 
 #include <Poco/SortedDirectoryIterator.h>
@@ -37,6 +39,16 @@ void FileChooser::CurrentDirectory(const std::string& path)
     ChangeDirectory(path);
 }
 
+std::string FileChooser::SaveFilename() const
+{
+    return _saveFilename;
+}
+
+void FileChooser::SaveFilename(const std::string& filename)
+{
+    _saveFilename = filename;
+}
+
 void FileChooser::Context(const std::string& context)
 {
     _context = context;
@@ -71,7 +83,10 @@ bool FileChooser::MultiSelect() const
 void FileChooser::Show()
 {
     _selectedFiles.clear();
+    _titleAndId = _title + "###File Chooser";
     _visible = true;
+
+    ImGui::OpenPopup(_titleAndId.c_str());
 }
 
 void FileChooser::Close()
@@ -94,12 +109,8 @@ bool FileChooser::Draw()
         ChangeDirectory(Poco::Path::home());
     }
 
-    std::string dialogTileAndId = _title + "###File Chooser";
-
-    ImGui::OpenPopup(dialogTileAndId.c_str());
-
     ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
-    if (ImGui::BeginPopupModal(dialogTileAndId.c_str(), &_visible, ImGuiWindowFlags_NoCollapse))
+    if (ImGui::BeginPopupModal(_titleAndId.c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
     {
         DrawNavButtons();
 
@@ -142,8 +153,13 @@ bool FileChooser::Draw()
             ImGui::EndListBox();
         }
 
+        if (_mode == Mode::SaveFile)
+        {
+            ImGui::InputText("##filename", &pathBuffer[0], IM_ARRAYSIZE(pathBuffer));
+        }
+
         ImGui::PushStyleColor(ImGuiCol_Button, 0xFF000080);
-        if (ImGui::Button("Cancel"))
+        if (ImGui::Button(ICON_FA_BAN " Cancel"))
         {
             _selectedFiles.clear();
             fileSelected = true;
@@ -151,7 +167,18 @@ bool FileChooser::Draw()
         }
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        if (ImGui::Button("Select"))
+
+        const char* acceptButtonText;
+        if (_mode == Mode::SaveFile)
+        {
+            acceptButtonText = ICON_FA_FLOPPY_DISK " Save";
+        }
+        else
+        {
+            acceptButtonText = ICON_FA_CHECK " Select";
+        }
+
+        if (ImGui::Button(acceptButtonText))
         {
             for (auto index : _selectedFileIndices)
             {
@@ -173,10 +200,6 @@ bool FileChooser::Draw()
 
         ImGui::EndPopup();
     }
-    else
-    {
-        Close();
-    }
 
     return fileSelected;
 }
@@ -194,7 +217,7 @@ void FileChooser::DrawNavButtons()
     std::vector<std::string> roots;
     Poco::Path::listRoots(roots);
 
-    if (ImGui::Button("Up"))
+    if (ImGui::Button(ICON_FA_CARET_UP " Up"))
     {
         ChangeDirectory(_currentDir.parent());
         poco_debug_f1(_logger, "Going one dir up: %s", _currentDir.toString());
@@ -202,7 +225,7 @@ void FileChooser::DrawNavButtons()
 
     ImGui::SameLine();
 
-    if (ImGui::Button("Home"))
+    if (ImGui::Button(ICON_FA_HOUSE " Home"))
     {
         ChangeDirectory(Poco::Path::home());
         poco_debug_f1(_logger, "Going to user's home dir: %s", _currentDir.toString());

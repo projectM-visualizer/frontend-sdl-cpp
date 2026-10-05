@@ -1,7 +1,13 @@
 add_library(ProjectMSDL-Notifications STATIC
         DisplayToastNotification.cpp
         DisplayToastNotification.h
-        QuitNotification.cpp QuitNotification.h PlaybackControlNotification.cpp PlaybackControlNotification.h UpdateWindowTitleNotification.cpp UpdateWindowTitleNotification.h)
+        PlaybackControlNotification.cpp
+        PlaybackControlNotification.h
+        QuitNotification.cpp
+        QuitNotification.h
+        UpdateWindowTitleNotification.cpp
+        UpdateWindowTitleNotification.h
+        )
 
 target_include_directories(ProjectMSDL-Notifications
         PRIVATE
