@@ -77,6 +77,10 @@ void ProjectMSDLApplication::initialize(Poco::Util::Application& self)
                 {
                     loadConfiguration(configFilePath.toString(), PRIO_DEFAULT);
                 }
+                else
+                {
+                    poco_warning_f1(logger(), "Default configuration file %s not found, using built-in defaults.", configFilePath.toString());
+                }
             }
         }
     }
