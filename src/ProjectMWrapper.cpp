@@ -163,10 +163,10 @@ void ProjectMWrapper::RenderFrame()
     size_t currentMeshX{0};
     size_t currentMeshY{0};
     projectm_get_mesh_size(_projectM, &currentMeshX, &currentMeshY);
-    if (currentMeshX != _projectMConfigView->getInt("meshX", 220) ||
-        currentMeshY != _projectMConfigView->getInt("meshY", 125))
+    if (currentMeshX != _projectMConfigView->getInt("meshX", 48) ||
+        currentMeshY != _projectMConfigView->getInt("meshY", 32))
     {
-        projectm_set_mesh_size(_projectM, _projectMConfigView->getInt("meshX", 220), _projectMConfigView->getInt("meshY", 125));
+        projectm_set_mesh_size(_projectM, _projectMConfigView->getInt("meshX", 48), _projectMConfigView->getInt("meshY", 32));
     }
 
     // Add new audio data to the instance from the staging buffer

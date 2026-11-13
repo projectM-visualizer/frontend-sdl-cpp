@@ -33,7 +33,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ENABLE_FLAT_PACKAGE)
     set(PROJECTMSDL_DESKTOP_DIR "${CMAKE_INSTALL_DATAROOTDIR}/applications" CACHE STRING "Directory to install the .desktop file in, relative to the install prefix.")
     set(PROJECTMSDL_ICONS_DIR "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor" CACHE STRING "Directory to install the icons in, relative to the install prefix.")
 
-    GNUInstallDirs_get_absolute_install_dir(_config_dir_abs_init PROJECTMSDL_CONFIG_DIR DATAROOTDIR)
+    GNUInstallDirs_get_absolute_install_dir(_config_dir_abs_init PROJECTMSDL_DATA_DIR DATAROOTDIR)
     set(DEFAULT_CONFIG_PATH "${_config_dir_abs_init}" CACHE STRING "Optional path to look for the configuration file in addition to PROJECTMSDL_BIN_DIR. May include POCO variables like \${application.dir}.")
     set(DEFAULT_PRESETS_PATH "${_config_dir_abs_init}/presets" CACHE STRING "Default presets path in the configuration file. May include POCO variables like \${application.dir}.")
     set(DEFAULT_TEXTURES_PATH "${_config_dir_abs_init}/textures" CACHE STRING "Default textures path in the configuration file. May include POCO variables like \${application.dir}.")
